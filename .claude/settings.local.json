@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []
