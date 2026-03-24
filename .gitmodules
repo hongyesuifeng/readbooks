@@ -1,0 +1,3 @@
+[submodule "papers/GameDevBench/code"]
+	path = papers/GameDevBench/code
+	url = https://github.com/waynchi/gamedevbench.git
