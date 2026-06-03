@@ -18,8 +18,13 @@
 
 ## 模板路径
 
-- 模板文件：`/mnt/c/Users/qq691/Desktop/readbooks/templates/读书笔记模板.md`
-- 笔记目录：`/mnt/c/Users/qq691/Desktop/readbooks/books/`
+- 模板文件：`/mnt/d/readBooks/readbooks/templates/读书笔记模板.md`
+- 笔记根目录：`/mnt/d/readBooks/readbooks/books/`
+- **新书必须放到对应分类子目录下**，分类规则：
+  - `software-engineering/` — 软件工程、编程语言、项目管理
+  - `game-dev/` — 游戏开发、游戏引擎、图形渲染
+  - `cs-fundamentals/` — 计算机基础、操作系统、编译原理、工具链
+  - `thinking/` — 思维方法、认知科学、职业成长、非技术类
 
 ## 输出格式
 
