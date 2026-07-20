@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>超级幻想王国 - Web 简化版</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --panel: #16213e;
+  --gold: #f0c040;
+  --wood: #8b6914;
+  --stone: #808080;
+  --food: #ff6b6b;
+  --glory: #a855f7;
+  --hp: #4ade80;
+  --danger: #ef4444;
+  --text: #e2e8f0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+#game {
+  width: 100%;
+  max-width: 900px;
+  min-height: 95vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+#header {
+  background: var(--panel);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #2a2a4e;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+#header h1 { font-size: 1.1em; color: var(--gold); white-space: nowrap; }
+#day-info { font-size: 0.9em; color: #aaa; }
+#day-info span { color: var(--gold); font-weight: bold; }
+
+/* Resources Bar */
+#res-bar {
+  background: var(--panel);
+  padding: 6px 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #2a2a4e;
+  font-size: 0.85em;
+}
+.res-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+}
+.res-item .icon { font-size: 1.1em; }
+.res-item .val { font-weight: bold; min-width: 3em; text-align: right; }
+.res-item .delta { font-size: 0.75em; min-width: 2em; }
+.delta-pos { color: #4ade80; }
+.delta-neg { color: #ef4444; }
+.delta-zero { color: #666; }
+
+/* Phase Banner */
+#phase-banner {
+  text-align: center;
+  padding: 8px;
+  font-weight: bold;
+  font-size: 1em;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+}
+.phase-day { background: #1e3a5f; color: #60a5fa; }
+.phase-night { background: #3a1e1e; color: #f87171; }
+
+/* Main Area */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* Day: Build Panel */
+#day-panel { display: flex; flex-direction: column; gap: 8px; }
+.section-title {
+  font-size: 0.85em;
+  color: #aaa;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid #2a2a4e;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.8em;
+}
+.card:hover { border-color: var(--gold); transform: translateY(-1px); }
+.card.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.card .name { font-weight: bold; color: var(--gold); margin-bottom: 2px; }
+.card .desc { color: #aaa; font-size: 0.85em; margin-bottom: 4px; }
+.card .cost { font-size: 0.8em; color: #999; }
+
+/* Owned buildings/units */
+.owned-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.owned-tag {
+  background: rgba(255,255,255,0.08);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.owned-tag .count { color: var(--gold); font-weight: bold; }
+
+/* Night: Battle Arena */
+#battle-arena {
+  display: flex;
+  gap: 8px;
+  min-height: 300px;
+}
+#battle-arena > div { flex: 1; }
+.battle-side-label {
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.8em;
+  padding: 4px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+.label-def { background: rgba(74,222,128,0.15); color: var(--hp); }
+.label-atk { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+.battle-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  margin: 2px 0;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.04);
+  font-size: 0.8em;
+  transition: all 0.3s;
+}
+.battle-unit .hp-bar {
+  flex: 1;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.battle-unit .hp-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.hp-high { background: var(--hp); }
+.hp-mid { background: var(--gold); }
+.hp-low { background: var(--danger); }
+.unit-dead { opacity: 0.3; text-decoration: line-through; }
+
+#battle-log {
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 0.75em;
+  color: #aaa;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+#battle-log .log-dmg { color: #f87171; }
+#battle-log .log-heal { color: #4ade80; }
+#battle-log .log-boss { color: #fbbf24; font-weight: bold; }
+#battle-log .log-glory { color: #a855f7; }
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95em;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--gold); color: #1a1a2e; }
+.btn-primary:hover { background: #f5d060; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: #f87171; }
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.75em;
+  border-radius: 4px;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+}
+.btn-sm:hover { background: rgba(240,192,64,0.15); }
+.btn-sm:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Hero Ability */
+#hero-ability {
+  padding: 8px;
+  background: rgba(168,85,247,0.1);
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 4px;
+}
+#hero-ability button {
+  padding: 8px 16px;
+  background: var(--glory);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+#hero-ability button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Modals / Messages */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  z-index: 100;
+  animation: fadeOut 2s forwards;
+  font-size: 0.9em;
+}
+@keyframes fadeOut {
+  0%,70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+#game-over {
+  text-align: center;
+  padding: 30px;
+}
+#game-over h2 { color: var(--danger); margin-bottom: 12px; }
+#game-over .stats { color: #aaa; margin-bottom: 16px; font-size: 0.9em; }
+
+.hero-info {
+  padding: 8px;
+  background: rgba(240,192,64,0.08);
+  border: 1px solid rgba(240,192,64,0.2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<script>
+// ============ 游戏数据定义 ============
+
+const BUILDINGS = {
+  lumberMill: { name:'🪓 伐木场', desc:'日产木材+2', cost:{gold:3}, prod:{wood:2}, maxCount:5 },
+  quarry:    { name:'⛏️ 采石场', desc:'日产石料+2', cost:{gold:3}, prod:{stone:2}, maxCount:5 },
+  farm:      { name:'🌾 农场',   desc:'日产食物+3', cost:{gold:5}, prod:{food:3}, maxCount:5 },
+  tavern:    { name:'🍺 酒馆',   desc:'每夜回复所有单位25%HP', cost:{wood:8,food:4}, maxCount:1, special:'healPercent' },
+  wall:      { name:'🏰 城墙',   desc:'所有单位+3防御', cost:{stone:10}, maxCount:3, special:'wall' },
+};
+
+const UNITS = {
+  swordsman: { name:'⚔️ 剑士',   desc:'前排坦克', cost:{wood:5,gold:4},  hp:40, atk:7,  def:5, role:'tank', icon:'🛡️' },
+  archer:    { name:'🏹 弓手',   desc:'后排输出', cost:{wood:3,gold:6},  hp:25, atk:12, def:2, role:'dps',  icon:'🎯' },
+  priest:    { name:'✝️ 僧侣',   desc:'治疗友军', cost:{food:5,gold:5},  hp:20, atk:3,  def:1, role:'healer', icon:'💚', healAmount:5 },
+  knight:    { name:'🐴 骑士',   desc:'精英全能', cost:{wood:10,stone:5,gold:12}, hp:55, atk:16, def:6, role:'elite', icon:'⚜️' },
+};
+
+const ITEMS = {
+  sharpSword:  { name:'🗡️ 利刃',  desc:'所有单位攻击+3',  cost:{glory:8},  effect:u=>{u.atk+=3;u.baseAtk+=3} },
+  ironArmor:   { name:'🛡️ 铁甲',  desc:'所有单位防御+2',  cost:{glory:8},  effect:u=>{u.def+=2;u.baseDef+=2} },
+  vitality:    { name:'❤️ 活力',  desc:'所有单位生命+10', cost:{glory:10}, effect:u=>{u.maxHp+=10;u.hp+=10;u.baseMaxHp+=10} },
+  heroBlade:   { name:'⚡ 英雄刃', desc:'英雄攻击力+8',    cost:{glory:12}, effect:'heroAtk' },
+  healHerb:    { name:'🌿 药草',  desc:'每波结束后回复10%HP', cost:{glory:15}, effect:'waveHeal' },
+};
+
+const MONSTERS = [
+  { name:'哥布林',  icon:'👺', hp:12, atk:4, def:1 },
+  { name:'骷髅兵',  icon:'💀', hp:15, atk:5, def:2 },
+  { name:'暗影狼',  icon:'🐺', hp:10, atk:8, def:0 },
+  { name:'石像鬼',  icon:'🗿', hp:20, atk:3, def:4 },
+  { name:'小恶魔',  icon:'👿', hp:18, atk:6, def:1 },
+  { name:'幽灵',    icon:'👻', hp:12, atk:7, def:0 },
+  { name:'巨蜘蛛',  icon:'🕷️', hp:25, atk:5, def:2 },
+  { name:'火焰魔',  icon:'🔥', hp:22, atk:9, def:1 },
+];
+
+const BOSSES = [
+  { name:'哥布林王',  icon:'👹', hp:60, atk:12, def:4 },
+  { name:'暗黑法师',  icon:'🧙‍♂️', hp:80, atk:15, def:3 },
+  { name:'亡灵将军',  icon:'💀⚔️', hp:100, atk:18, def:5 },
+  { name:'巨龙',      icon:'🐲', hp:150, atk:22, def:6 },
+  { name:'最终魔王',  icon:'👑💀', hp:200, atk:28, def:8 },
+];
+
+const HEROES = [
+  { name:'火焰领主',   icon:'🔥', ability:'烈焰风暴', abDesc:'对所有怪物造成英雄攻击力×2的伤害', abCooldown:3 },
+  { name:'冰霜女王',   icon:'❄️', ability:'极寒冰封', abDesc:'冻结所有怪物1回合（跳过攻击）', abCooldown:4 },
+  { name:'圣光骑士',   icon:'✨', ability:'神圣护盾', abDesc:'所有友军获得英雄攻击力×1.5的护盾', abCooldown:3 },
+];
+
+// ============ 游戏状态 ============
+const state = {
+  phase: 'pickHero', // pickHero | day | night | gameOver
+  day: 0,
+  wave: 0,
+  maxWaves: 3,
+  resources: { wood:15, stone:10, food:12, gold:30, glory:0 },
+  buildings: {},
+  units: [],
+  hero: null,
+  heroAbilityReady: true,
+  heroAbilityTurns: 0,
+  monsters: [],
+  bossDefeated: 0,
+  items: [],
+  unitIdCounter: 0,
+  // daily production cache
+  dailyProd: { wood:0, stone:0, food:0, gold:0 },
+};
+
+// ============ 渲染引擎 ============
+const $game = document.getElementById('game');
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2100);
+}
+
+function canAfford(cost) {
+  for (const [k, v] of Object.entries(cost)) {
+    if ((state.resources[k] || 0) < v) return false;
+  }
+  return true;
+}
+
+function pay(cost) {
+  for (const [k, v] of Object.entries(cost)) {
+    state.resources[k] = (state.resources[k] || 0) - v;
+  }
+}
+
+// ============ 阶段: 选择英雄 ============
+function renderPickHero() {
+  state.phase = 'pickHero';
+  const cards = HEROES.map((h, i) => `
+    <div class="card" onclick="pickHero(${i})" style="text-align:center; padding:16px;">
+      <div style="font-size:3em;">${h.icon}</div>
+      <div class="name" style="font-size:1.1em;">${h.name}</div>
+      <div class="desc" style="margin:8px 0;">🎯 ${h.ability}: ${h.abDesc}</div>
+      <div style="color:#a78bfa; font-size:0.8em;">冷却: ${h.abCooldown} 回合</div>
+    </div>
+  `).join('');
+
+  $game.innerHTML = `
+    <div id="header">
+      <h1>🏰 超级幻想王国</h1>
+      <div style="color:#aaa">简易可玩版</div>
+    </div>
+    <div id="main" style="justify-content:center; align-items:center;">
+      <div style="text-align:center; max-width:600px;">
+        <h2 style="color:var(--gold); margin-bottom:8px;">⚔️ 选择你的守护者</h2>
+        <p style="color:#aaa; margin-bottom:16px; font-size:0.9em;">
+          白天建造王国、招募军队 → 夜晚抵御怪物入侵<br>
+          存活 15 天即可胜利！
+        </p>
+        <div class="grid-3">${cards}</div>
+      </div>
+    </div>
+  `;
+}
+
+function pickHero(idx) {
+  const h = HEROES[idx];
+  state.hero = {
+    name: h.name,
+    icon: h.icon,
+    hp: 60, maxHp: 60,
+    atk: 12, baseAtk: 12,
+    def: 3, baseDef: 3,
+    ability: h.ability,
+    abDesc: h.abDesc,
+    abCooldown: h.abCooldown,
+  };
+  state.heroAbilityReady = true;
+  state.heroAbilityTurns = 0;
+  state.day = 1;
+  startDay();
+}
+
+// ============ 阶段: 白天 ============
+function calcDailyProd() {
+  const p = { wood:0, stone:0, food:0, gold:0 };
+  for (const [key, count] of Object.entries(state.buildings)) {
+    const cfg = BUILDINGS[key];
+    if (cfg.prod) {
+      for (const [res, amt] of Object.entries(cfg.prod)) {
+        p[res] = (p[res] || 0) + amt * count;
+      }
+    }
+  }
+  state.dailyProd = p;
+}
+
+function startDay() {
+  state.phase = 'day';
+  state.wave = 0;
+  state.monsters = [];
+  state.heroAbilityReady = true;
+  state.heroAbilityTurns = 0;
+  // Reset unit HP
+  for (const u of state.units) u.hp = u.maxHp;
+  if (state.hero) state.hero.hp = state.hero.maxHp;
+  calcDailyProd();
+  renderDay();
+}
+
+function buyBuilding(key) {
+  const cfg = BUILDINGS[key];
+  if (!canAfford(cfg.cost)) { toast('💰 资源不足！'); return; }
+  const cur = state.buildings[key] || 0;
+  if (cur >= (cfg.maxCount || 99)) { toast('⚠️ 已达到最大建造数量'); return; }
+  pay(cfg.cost);
+  state.buildings[key] = cur + 1;
+  calcDailyProd();
+  renderDay();
+}
+
+function buyUnit(key) {
+  const cfg = UNITS[key];
+  if (!canAfford(cfg.cost)) { toast('💰 资源不足！'); return; }
+  pay(cfg.cost);
+  state.units.push({
+    id: ++state.unitIdCounter,
+    type: key,
+    name: cfg.name,
+    icon: cfg.icon,
+    hp: cfg.hp, maxHp: cfg.hp,
+    atk: cfg.atk, baseAtk: cfg.atk,
+    def: cfg.def, baseDef: cfg.def,
+    role: cfg.role,
+    healAmount: cfg.healAmount || 0,
+  });
+  renderDay();
+  toast(`✅ 招募了 ${cfg.name}！`);
+}
+
+function buyItem(key) {
+  const cfg = ITEMS[key];
+  if (!canAfford(cfg.cost)) { toast('⭐ 荣耀不足！'); return; }
+  if (state.items.includes(key)) { toast('⚠️ 已购买过此物品'); return; }
+  pay(cfg.cost);
+  state.items.push(key);
+  // Apply effect
+  if (key === 'heroAtk') {
+    state.hero.atk += 8;
+    state.hero.baseAtk += 8;
+  }
+  if (typeof cfg.effect === 'function') {
+    for (const u of state.units) cfg.effect(u);
+  }
+  renderDay();
+  toast(`✅ 获得了 ${cfg.name}！`);
+}
+
+function renderDay() {
+  calcDailyProd();
+  const bKeys = Object.keys(BUILDINGS);
+  const uKeys = Object.keys(UNITS);
+  const iKeys = Object.keys(ITEMS);
+
+  const buildCards = bKeys.map(k => {
+    const cfg = BUILDINGS[k];
+    const cur = state.buildings[k] || 0;
+    const maxed = cur >= (cfg.maxCount || 99);
+    const poor = !canAfford(cfg.cost);
+    const cls = (maxed || poor) ? 'card disabled' : 'card';
+    const costStr = Object.entries(cfg.cost).map(([r,v]) => `${resIcon(r)}${v}`).join(' ');
+    return `<div class="${cls}" onclick="buyBuilding('${k}')">
+      <div class="name">${cfg.name} <span style="color:#888">(${cur}/${cfg.maxCount||'∞'})</span></div>
+      <div class="desc">${cfg.desc}</div>
+      <div class="cost">${costStr}</div>
+    </div>`;
+  }).join('');
+
+  const unitCards = uKeys.map(k => {
+    const cfg = UNITS[k];
+    const poor = !canAfford(cfg.cost);
+    const cls = poor ? 'card disabled' : 'card';
+    const costStr = Object.entries(cfg.cost).map(([r,v]) => `${resIcon(r)}${v}`).join(' ');
+    return `<div class="${cls}" onclick="buyUnit('${k}')">
+      <div class="name">${cfg.name} ${cfg.icon}</div>
+      <div class="desc">HP:${cfg.hp} ATK:${cfg.atk} DEF:${cfg.def} | ${cfg.desc}</div>
+      <div class="cost">${costStr}</div>
+    </div>`;
+  }).join('');
+
+  // Show owned units
+  const unitCounts = {};
+  for (const u of state.units) { unitCounts[u.type] = (unitCounts[u.type] || 0) + 1; }
+  const ownedUnits = Object.entries(unitCounts).map(([k, v]) => {
+    return `<span class="owned-tag">${UNITS[k].icon} ${UNITS[k].name.split(' ')[1]}<span class="count">×${v}</span></span>`;
+  }).join('');
+
+  const itemCards = iKeys.map(k => {
+    const cfg = ITEMS[k];
+    const bought = state.items.includes(k);
+    const poor = !canAfford(cfg.cost);
+    const cls = (bought || poor) ? 'card disabled' : 'card';
+    const costStr = Object.entries(cfg.cost).map(([r,v]) => `${resIcon(r)}${v}`).join(' ');
+    return `<div class="${cls}" onclick="buyItem('${k}')">
+      <div class="name">${cfg.name} ${bought?'✅':''}</div>
+      <div class="desc">${cfg.desc}</div>
+      <div class="cost">${costStr}</div>
+    </div>`;
+  }).join('');
+
+  const heroBlock = state.hero ? `
+    <div class="hero-info">
+      🦸 <b>${state.hero.icon} ${state.hero.name}</b>
+      HP:${state.hero.hp}/${state.hero.maxHp} | ATK:${state.hero.atk} | DEF:${state.hero.def}
+      | 🎯 <span style="color:#a78bfa">${state.hero.ability}</span>
+    </div>
+  ` : '';
+
+  $game.innerHTML = `
+    <div id="header">
+      <h1>🏰 超级幻想王国</h1>
+      <div id="day-info">☀️ 第 <span>${state.day}</span> 天 · 白天阶段</div>
+    </div>
+    ${renderResBar()}
+    <div id="phase-banner" class="phase-day">☀️ 白 天 — 建造你的王国，为夜晚的战斗做准备 ☀️</div>
+    <div id="main">
+      <div id="day-panel">
+        ${heroBlock}
+        <div class="section-title">🏗️ 建造建筑</div>
+        <div class="grid-2">${buildCards}</div>
+        <div class="section-title">👥 招募单位 <span style="font-size:0.8em;color:#888">(已有: ${state.units.length})</span></div>
+        <div class="owned-list">${ownedUnits || '<span style="color:#555;font-size:0.8em;">还没有单位</span>'}</div>
+        <div class="grid-2">${unitCards}</div>
+        <div class="section-title">⭐ 荣耀商店 (荣耀: ${state.resources.glory})</div>
+        <div class="grid-2">${itemCards}</div>
+        <div style="text-align:center; margin-top:8px;">
+          <button class="btn btn-danger" onclick="startNight()">🌙 结束白天，迎接夜晚</button>
+          <div style="color:#888;font-size:0.8em;margin-top:4px;">每日资源产出将自动结算</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ============ 阶段: 夜晚 ============
+function startNight() {
+  state.phase = 'night';
+  // Collect daily production
+  for (const [res, amt] of Object.entries(state.dailyProd)) {
+    state.resources[res] = (state.resources[res] || 0) + amt;
+  }
+  state.wave = 1;
+  spawnWave();
+  renderNight();
+}
+
+function spawnWave() {
+  const isBoss = state.wave % 5 === 0;
+  if (isBoss) {
+    const bossIdx = Math.min(state.bossDefeated, BOSSES.length - 1);
+    const b = BOSSES[bossIdx];
+    const scale = 1 + state.day * 0.15;
+    state.monsters = [{
+      name: b.name, icon: b.icon,
+      hp: Math.floor(b.hp * scale), maxHp: Math.floor(b.hp * scale),
+      atk: Math.floor(b.atk * scale), def: Math.floor(b.def * scale),
+      isBoss: true
+    }];
+  } else {
+    const count = 2 + Math.floor(state.day / 3);
+    const scale = 1 + state.day * 0.1;
+    state.monsters = [];
+    for (let i = 0; i < count; i++) {
+      const m = MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
+      state.monsters.push({
+        name: m.name, icon: m.icon,
+        hp: Math.floor(m.hp * scale), maxHp: Math.floor(m.hp * scale),
+        atk: Math.floor(m.atk * scale), def: Math.floor(m.def * scale),
+        isBoss: false
+      });
+    }
+  }
+}
+
+function resolveBattle() {
+  const log = [];
+  const allies = state.units.filter(u => u.hp > 0);
+  const hero = state.hero;
+  let enemies = state.monsters.filter(m => m.hp > 0);
+  if (allies.length === 0 && (!hero || hero.hp <= 0)) {
+    log.push({ msg: '💀 没有单位可以战斗！', cls: '' });
+    return { log, won: false };
+  }
+  if (enemies.length === 0) return { log, won: true };
+
+  // Apply wall bonus
+  const wallCount = state.buildings.wall || 0;
+  const wallBonus = wallCount * 3;
+
+  // Hero attacks first
+  if (hero && hero.hp > 0 && enemies.length > 0) {
+    const target = enemies[0];
+    const dmg = Math.max(1, hero.atk - target.def);
+    target.hp -= dmg;
+    log.push({ msg: `🦸 英雄攻击 → ${target.icon}${target.name} -${dmg}HP (剩${Math.max(0,target.hp)})`, cls: '' });
+  }
+
+  // Each ally attacks
+  for (const u of allies) {
+    if (enemies.length === 0) break;
+    const target = enemies[Math.floor(Math.random() * enemies.length)];
+    const dmg = Math.max(1, u.atk - target.def);
+    target.hp -= dmg;
+    const remaining = Math.max(0, target.hp);
+    log.push({ msg: `${u.icon}${u.name}攻击 → ${target.icon}${target.name} -${dmg}HP (剩${remaining})`, cls: 'log-dmg' });
+    enemies = enemies.filter(m => m.hp > 0);
+  }
+
+  // Healer heals
+  for (const u of allies) {
+    if (u.role === 'healer' && u.healAmount > 0) {
+      const lowest = [...allies, hero].filter(a => a && a.hp > 0 && a.hp < a.maxHp).sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0];
+      if (lowest) {
+        const heal = u.healAmount;
+        lowest.hp = Math.min(lowest.maxHp, lowest.hp + heal);
+        log.push({ msg: `💚 ${u.name}治疗 → ${lowest.name||lowest.icon} +${heal}HP`, cls: 'log-heal' });
+      }
+    }
+  }
+
+  // Enemies attack
+  for (const m of enemies) {
+    if (m.hp <= 0) continue;
+    const validTargets = [...allies, hero].filter(a => a && a.hp > 0);
+    if (validTargets.length === 0) break;
+    // prefer tank
+    const tanks = validTargets.filter(a => a.role === 'tank' || a.role === 'elite');
+    const target = tanks.length > 0 ? tanks[Math.floor(Math.random() * tanks.length)] : validTargets[Math.floor(Math.random() * validTargets.length)];
+    const dmg = Math.max(1, m.atk - (target.def + wallBonus));
+    target.hp -= dmg;
+    log.push({ msg: `${m.icon}${m.name}攻击 → ${target.name||target.icon} -${dmg}HP (剩${Math.max(0,target.hp)})`, cls: m.isBoss ? 'log-boss' : 'log-dmg' });
+  }
+
+  // Clean up dead
+  for (const u of state.units) { if (u.hp <= 0) u.hp = 0; }
+  if (hero && hero.hp <= 0) hero.hp = 0;
+  enemies = enemies.filter(m => m.hp > 0);
+  state.monsters = enemies;
+
+  const won = enemies.length === 0;
+  if (won) {
+    const isBoss = state.wave % 5 === 0;
+    const gloryGain = isBoss ? 5 + state.day : 2 + Math.floor(state.day / 3);
+    state.resources.glory += gloryGain;
+    log.push({ msg: `⚔️ 波次 ${state.wave} 击退！获得 ⭐${gloryGain} 荣耀`, cls: 'log-glory' });
+    if (isBoss) {
+      state.bossDefeated++;
+      log.push({ msg: `👑 Boss 被击败！`, cls: 'log-boss' });
+    }
+    // Wave heal
+    if (state.items.includes('healHerb')) {
+      for (const u of state.units) u.hp = Math.min(u.maxHp, u.hp + Math.floor(u.maxHp * 0.1));
+      if (hero) hero.hp = Math.min(hero.maxHp, hero.hp + Math.floor(hero.maxHp * 0.1));
+      log.push({ msg: '🌿 药草回复了10%生命值', cls: 'log-heal' });
+    }
+  }
+
+  return { log, won };
+}
+
+function heroAbility() {
+  if (!state.heroAbilityReady) return;
+  state.heroAbilityReady = false;
+  state.heroAbilityTurns = state.hero.abCooldown;
+  const log = [];
+  const hero = state.hero;
+
+  if (hero.name === '火焰领主') {
+    const dmg = hero.atk * 2;
+    for (const m of state.monsters) {
+      m.hp -= Math.max(1, dmg - m.def);
+    }
+    log.push({ msg: `🔥 烈焰风暴！对所有怪物造成 ${dmg} 伤害`, cls: 'log-dmg' });
+  } else if (hero.name === '冰霜女王') {
+    log.push({ msg: `❄️ 极寒冰封！所有怪物跳过下回合攻击`, cls: 'log-heal' });
+    // Mark enemies as frozen (skip next attack)
+    for (const m of state.monsters) m.frozen = true;
+  } else if (hero.name === '圣光骑士') {
+    const shield = Math.floor(hero.atk * 1.5);
+    for (const u of state.units) u.hp = Math.min(u.maxHp, u.hp + shield);
+    if (hero) hero.hp = Math.min(hero.maxHp, hero.hp + shield);
+    log.push({ msg: `✨ 神圣护盾！所有友军获得 ${shield} 护盾`, cls: 'log-heal' });
+  }
+
+  return log;
+}
+
+function nextWave() {
+  // Process frozen enemies - they thaw but already skipped attack
+  for (const m of state.monsters) delete m.frozen;
+
+  // Tavern heal
+  if (state.buildings.tavern) {
+    for (const u of state.units) {
+      u.hp = Math.min(u.maxHp, u.hp + Math.floor(u.maxHp * 0.25));
+    }
+  }
+
+  // Cooldown
+  if (!state.heroAbilityReady) {
+    state.heroAbilityTurns--;
+    if (state.heroAbilityTurns <= 0) {
+      state.heroAbilityReady = true;
+    }
+  }
+
+  state.wave++;
+  if (state.wave > state.maxWaves) {
+    // Night survived
+    state.day++;
+    if (state.day > 15) {
+      state.phase = 'gameOver';
+      renderGameOver(true);
+      return;
+    }
+    startDay();
+    return;
+  }
+  spawnWave();
+  renderNight();
+}
+
+function renderNight() {
+  const battleHtml = renderBattleView();
+  const isBoss = state.wave % 5 === 0;
+
+  $game.innerHTML = `
+    <div id="header">
+      <h1>🏰 超级幻想王国</h1>
+      <div id="day-info">🌙 第 <span>${state.day}</span> 天 · 夜晚阶段 · 波次 ${state.wave}/${state.maxWaves} ${isBoss?'👑BOSS':''}</div>
+    </div>
+    ${renderResBar()}
+    <div id="phase-banner" class="phase-night">🌙 夜 晚 — 怪物正在进攻！守护你的王国！🌙</div>
+    <div id="main">
+      ${battleHtml}
+    </div>
+  `;
+}
+
+function renderBattleView() {
+  const allies = state.units.filter(u => u.hp > 0);
+  const deadAllies = state.units.filter(u => u.hp <= 0);
+  const aliveMonsters = state.monsters.filter(m => m.hp > 0);
+  const deadMonsters = state.monsters.filter(m => m.hp <= 0);
+  const hero = state.hero;
+
+  const renderUnit = (u, side) => {
+    const hpPct = (u.hp / u.maxHp) * 100;
+    const hpClass = hpPct > 60 ? 'hp-high' : hpPct > 30 ? 'hp-mid' : 'hp-low';
+    return `<div class="battle-unit">
+      <span>${u.icon||''}</span>
+      <span style="min-width:3em;">${u.name||''}</span>
+      <div class="hp-bar"><div class="hp-fill ${hpClass}" style="width:${hpPct}%"></div></div>
+      <span style="font-size:0.75em;min-width:3.5em;">${u.hp}/${u.maxHp}</span>
+    </div>`;
+  };
+
+  return `
+    ${hero ? `<div class="hero-info" style="margin-bottom:8px;">
+      🦸 ${hero.icon} <b>${hero.name}</b> | HP:${hero.hp}/${hero.maxHp} | ATK:${hero.atk} | DEF:${hero.def}
+      | 🎯 ${hero.ability} <span style="color:${state.heroAbilityReady?'#4ade80':'#ef4444'}">${state.heroAbilityReady?'[就绪]':`[CD:${state.heroAbilityTurns}]`}</span>
+    </div>` : ''}
+    ${state.heroAbilityReady ? `
+    <div id="hero-ability">
+      <button onclick="useHeroAbility()">🎯 释放技能: ${hero.ability}!</button>
+    </div>` : ''}
+    <div id="battle-arena">
+      <div>
+        <div class="battle-side-label label-def">🛡️ 守军 (${allies.length})</div>
+        ${allies.map(u => renderUnit(u)).join('')}
+        ${deadAllies.length > 0 ? `<div style="color:#666;font-size:0.75em;margin-top:8px;">阵亡: ${deadAllies.map(u=>u.name).join(', ')}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;font-size:2em;color:#666;">⚡</div>
+      <div>
+        <div class="battle-side-label label-atk">👿 怪物 (${aliveMonsters.length})</div>
+        ${aliveMonsters.map(m => renderUnit(m)).join('')}
+        ${deadMonsters.length > 0 ? `<div style="color:#666;font-size:0.75em;margin-top:8px;">已击杀: ${deadMonsters.map(m=>m.name).join(', ')}</div>` : ''}
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="fightWave()">⚔️ 开始本波战斗!</button>
+      ${aliveMonsters.length === 0 && state.wave < state.maxWaves ? `<button class="btn" style="flex:1; background:#60a5fa; color:#1a1a2e;" onclick="nextWave()">➡️ 下一波</button>` : ''}
+      ${aliveMonsters.length === 0 && state.wave >= state.maxWaves ? `<button class="btn" style="flex:1; background:#4ade80; color:#1a1a2e;" onclick="nextWave()">☀️ 天亮！</button>` : ''}
+      ${allies.length === 0 && (!hero || hero.hp <= 0) ? `<button class="btn btn-danger" style="flex:1;" onclick="renderGameOver(false)">💀 王国沦陷</button>` : ''}
+    </div>
+    <div id="battle-log" style="min-height:60px;">点击"开始本波战斗"查看战斗过程...</div>
+  `;
+}
+
+function useHeroAbility() {
+  const logs = heroAbility();
+  const logEl = document.getElementById('battle-log');
+  if (logEl) {
+    logEl.innerHTML = logs.map(l => `<span class="${l.cls}">${l.msg}</span>`).join('<br>');
+  }
+  renderNight();
+  toast('🎯 英雄技能已释放！');
+}
+
+function fightWave() {
+  // Process frozen enemies - unfreeze them for next round
+  const hadFrozen = state.monsters.some(m => m.frozen);
+  for (const m of state.monsters) delete m.frozen;
+
+  const result = resolveBattle();
+  const logEl = document.getElementById('battle-log');
+  if (logEl) {
+    logEl.innerHTML = result.log.map(l => `<span class="${l.cls}">${l.msg}</span>`).join('<br>');
+  }
+  if (hadFrozen) {
+    if (logEl) logEl.innerHTML += '<br><span class="log-heal">❄️ 怪物从冻结中恢复</span>';
+  }
+
+  renderNight();
+
+  if (!result.won) {
+    const alliesLeft = state.units.filter(u => u.hp > 0).length;
+    if (alliesLeft === 0 && (!state.hero || state.hero.hp <= 0)) {
+      setTimeout(() => renderGameOver(false), 500);
+    }
+  }
+}
+
+function renderGameOver(won) {
+  state.phase = 'gameOver';
+  const totalGlory = state.resources.glory;
+  const daysSurvived = state.day;
+
+  $game.innerHTML = `
+    <div id="header">
+      <h1>🏰 超级幻想王国</h1>
+      <div style="color:#aaa">${won ? '🎉 胜利！' : '💀 王国沦陷'}</div>
+    </div>
+    <div id="main" style="justify-content:center; align-items:center;">
+      <div id="game-over">
+        <div style="font-size:4em;">${won ? '👑' : '💀'}</div>
+        <h2>${won ? '王国防守成功！' : '王国沦陷了...'}</h2>
+        <div class="stats">
+          <p>📅 存活天数: <b style="color:var(--gold)">${daysSurvived}</b> / 15</p>
+          <p>⭐ 累计荣耀: <b style="color:var(--glory)">${totalGlory}</b></p>
+          <p>👥 招募单位总数: <b>${state.units.length}</b></p>
+          <p>👑 Boss击杀: <b>${state.bossDefeated}</b></p>
+          <p>🏗️ 建筑总数: <b>${Object.values(state.buildings).reduce((a,b)=>a+b,0)}</b></p>
+        </div>
+        <button class="btn btn-primary" onclick="location.reload()" style="margin-top:16px;">🔄 再来一局</button>
+      </div>
+    </div>
+  `;
+}
+
+// ============ 资源栏 ============
+function resIcon(r) {
+  const map = { wood:'🌲', stone:'🪨', food:'🌾', gold:'💰', glory:'⭐' };
+  return map[r] || r;
+}
+
+function renderResBar() {
+  const items = ['wood','stone','food','gold','glory'];
+  return `<div id="res-bar">${items.map(r => {
+    const val = state.resources[r] || 0;
+    const delta = state.dailyProd[r] || 0;
+    const dCls = delta > 0 ? 'delta-pos' : delta < 0 ? 'delta-neg' : 'delta-zero';
+    const dStr = state.phase === 'day' ? (delta > 0 ? `+${delta}` : '') : '';
+    return `<div class="res-item">
+      <span class="icon">${resIcon(r)}</span>
+      <span class="val">${val}</span>
+      ${dStr ? `<span class="delta ${dCls}">${dStr}/天</span>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ============ 启动 ============
+renderPickHero();
+</script>
+</body>
+</html>
