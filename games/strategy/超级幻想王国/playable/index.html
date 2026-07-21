@@ -3,938 +3,1074 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>超级幻想王国 - Web 简化版</title>
+<title>超级幻想王国 - Web版</title>
 <style>
 :root {
-  --bg: #1a1a2e;
-  --panel: #16213e;
-  --gold: #f0c040;
-  --wood: #8b6914;
-  --stone: #808080;
-  --food: #ff6b6b;
-  --glory: #a855f7;
-  --hp: #4ade80;
-  --danger: #ef4444;
-  --text: #e2e8f0;
+  --bg: #1a1a2e; --panel: #16213e; --gold: #f0c040;
+  --wood: #b8860b; --stone: #808080; --food: #ff6b6b;
+  --glory: #a855f7; --hp: #4ade80; --danger: #ef4444; --text: #e2e8f0;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  user-select: none;
-}
-#game {
-  width: 100%;
-  max-width: 900px;
-  min-height: 95vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Header */
-#header {
-  background: var(--panel);
-  padding: 8px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid #2a2a4e;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-#header h1 { font-size: 1.1em; color: var(--gold); white-space: nowrap; }
-#day-info { font-size: 0.9em; color: #aaa; }
-#day-info span { color: var(--gold); font-weight: bold; }
-
-/* Resources Bar */
-#res-bar {
-  background: var(--panel);
-  padding: 6px 12px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid #2a2a4e;
-  font-size: 0.85em;
-}
-.res-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.05);
-}
-.res-item .icon { font-size: 1.1em; }
-.res-item .val { font-weight: bold; min-width: 3em; text-align: right; }
-.res-item .delta { font-size: 0.75em; min-width: 2em; }
-.delta-pos { color: #4ade80; }
-.delta-neg { color: #ef4444; }
-.delta-zero { color: #666; }
-
-/* Phase Banner */
-#phase-banner {
-  text-align: center;
-  padding: 8px;
-  font-weight: bold;
-  font-size: 1em;
-  letter-spacing: 2px;
-  transition: all 0.3s;
-}
-.phase-day { background: #1e3a5f; color: #60a5fa; }
-.phase-night { background: #3a1e1e; color: #f87171; }
-
-/* Main Area */
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-/* Day: Build Panel */
-#day-panel { display: flex; flex-direction: column; gap: 8px; }
-.section-title {
-  font-size: 0.85em;
-  color: #aaa;
-  border-bottom: 1px solid #333;
-  padding-bottom: 4px;
-  margin-bottom: 4px;
-}
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
-
-.card {
-  background: var(--panel);
-  border: 1px solid #2a2a4e;
-  border-radius: 8px;
-  padding: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-size: 0.8em;
-}
-.card:hover { border-color: var(--gold); transform: translateY(-1px); }
-.card.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-.card .name { font-weight: bold; color: var(--gold); margin-bottom: 2px; }
-.card .desc { color: #aaa; font-size: 0.85em; margin-bottom: 4px; }
-.card .cost { font-size: 0.8em; color: #999; }
-
-/* Owned buildings/units */
-.owned-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.owned-tag {
-  background: rgba(255,255,255,0.08);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75em;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-.owned-tag .count { color: var(--gold); font-weight: bold; }
-
-/* Night: Battle Arena */
-#battle-arena {
-  display: flex;
-  gap: 8px;
-  min-height: 300px;
-}
-#battle-arena > div { flex: 1; }
-.battle-side-label {
-  text-align: center;
-  font-weight: bold;
-  font-size: 0.8em;
-  padding: 4px;
-  border-radius: 4px;
-  margin-bottom: 4px;
-}
-.label-def { background: rgba(74,222,128,0.15); color: var(--hp); }
-.label-atk { background: rgba(239,68,68,0.15); color: var(--danger); }
-
-.battle-unit {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  margin: 2px 0;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.04);
-  font-size: 0.8em;
-  transition: all 0.3s;
-}
-.battle-unit .hp-bar {
-  flex: 1;
-  height: 4px;
-  background: #333;
-  border-radius: 2px;
+  background: #0a0a1a;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; font-family: 'Segoe UI', system-ui, sans-serif;
   overflow: hidden;
 }
-.battle-unit .hp-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s;
+#container {
+  position: relative;
+  width: 100vw; height: 100vh;
+  max-width: 1100px; max-height: 800px;
+  display: flex; flex-direction: column;
 }
-.hp-high { background: var(--hp); }
-.hp-mid { background: var(--gold); }
-.hp-low { background: var(--danger); }
-.unit-dead { opacity: 0.3; text-decoration: line-through; }
-
-#battle-log {
-  max-height: 120px;
-  overflow-y: auto;
-  font-size: 0.75em;
-  color: #aaa;
-  padding: 4px 8px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 6px;
-  margin-top: 4px;
-  line-height: 1.5;
+#top-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 12px; background: var(--panel);
+  border-bottom: 2px solid #2a2a4e; gap: 8px; flex-wrap: wrap;
+  z-index: 10;
 }
-#battle-log .log-dmg { color: #f87171; }
-#battle-log .log-heal { color: #4ade80; }
-#battle-log .log-boss { color: #fbbf24; font-weight: bold; }
-#battle-log .log-glory { color: #a855f7; }
-
-/* Buttons */
+#top-bar h1 { font-size: 1em; color: var(--gold); white-space: nowrap; }
+#res-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.res { display: flex; align-items: center; gap: 3px; padding: 3px 8px;
+  background: rgba(255,255,255,0.06); border-radius: 6px; font-size: 0.8em; }
+.res .icon { font-size: 1.1em; }
+.res .val { font-weight: bold; min-width: 2.5em; text-align: right; }
+#phase-info { font-size: 0.8em; color: #aaa; white-space: nowrap; }
+#phase-info span { color: var(--gold); font-weight: bold; }
+#canvas-wrap {
+  flex: 1; position: relative; overflow: hidden;
+  background: #0a0a1a;
+}
+canvas { display: block; width: 100%; height: 100%; }
+#bottom-bar {
+  display: flex; gap: 6px; padding: 8px 12px;
+  background: var(--panel); border-top: 2px solid #2a2a4e;
+  justify-content: center; flex-wrap: wrap; z-index: 10;
+}
 .btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.95em;
-  transition: all 0.15s;
-  letter-spacing: 1px;
+  padding: 8px 16px; border: none; border-radius: 8px;
+  cursor: pointer; font-weight: bold; font-size: 0.85em;
+  transition: all 0.15s; letter-spacing: 0.5px;
 }
-.btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--gold); color: #1a1a2e; }
-.btn-primary:hover { background: #f5d060; }
-.btn-danger { background: var(--danger); color: white; }
-.btn-danger:hover { background: #f87171; }
-.btn-sm {
-  padding: 4px 10px;
-  font-size: 0.75em;
-  border-radius: 4px;
-  border: 1px solid var(--gold);
-  background: transparent;
-  color: var(--gold);
-  cursor: pointer;
-}
-.btn-sm:hover { background: rgba(240,192,64,0.15); }
-.btn-sm:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+.btn:active { transform: scale(0.96); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; filter: none; transform: none; }
+.btn-build { background: #3b82f6; color: white; }
+.btn-recruit { background: #8b5cf6; color: white; }
+.btn-item { background: #a855f7; color: white; }
+.btn-end { background: #ef4444; color: white; font-size: 0.95em; }
+.btn-fight { background: #f59e0b; color: #1a1a2e; font-size: 0.95em; }
+.btn-hero { background: #ec4899; color: white; font-size: 0.95em; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(236,72,153,0.4)} 50%{box-shadow:0 0 0 8px rgba(236,72,153,0)} }
 
-/* Hero Ability */
-#hero-ability {
-  padding: 8px;
-  background: rgba(168,85,247,0.1);
-  border: 1px solid rgba(168,85,247,0.3);
-  border-radius: 8px;
-  text-align: center;
-  margin-top: 4px;
+/* Menu overlay */
+#menu-overlay {
+  position: absolute; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.7); display: flex;
+  justify-content: center; align-items: center; z-index: 20;
 }
-#hero-ability button {
-  padding: 8px 16px;
-  background: var(--glory);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 0.9em;
+#menu-panel {
+  background: var(--panel); border: 2px solid var(--gold);
+  border-radius: 12px; padding: 16px; max-width: 500px;
+  max-height: 80vh; overflow-y: auto;
 }
-#hero-ability button:disabled { opacity: 0.3; cursor: not-allowed; }
+#menu-panel h3 { color: var(--gold); margin-bottom: 8px; text-align: center; }
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.menu-card {
+  background: rgba(255,255,255,0.05); border: 1px solid #333;
+  border-radius: 8px; padding: 8px; cursor: pointer; text-align: center;
+  transition: all 0.15s; color: var(--text); font-size: 0.8em;
+}
+.menu-card:hover { border-color: var(--gold); background: rgba(255,255,255,0.1); }
+.menu-card.disabled { opacity: 0.35; cursor: not-allowed; }
+.menu-card .title { font-weight: bold; color: var(--gold); font-size: 1em; }
+.menu-card .sub { color: #999; font-size: 0.85em; margin: 2px 0; }
+.menu-card .price { color: #aaa; font-size: 0.8em; }
+.menu-close {
+  display: block; margin: 10px auto 0; padding: 6px 20px;
+  background: #333; color: white; border: none; border-radius: 6px; cursor: pointer;
+}
 
-/* Modals / Messages */
+/* Toast */
 .toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--panel);
-  border: 1px solid var(--gold);
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-weight: bold;
-  z-index: 100;
-  animation: fadeOut 2s forwards;
-  font-size: 0.9em;
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 1px solid var(--gold);
+  padding: 8px 20px; border-radius: 20px; font-weight: bold;
+  z-index: 100; animation: fadeOut 2s forwards; font-size: 0.85em;
 }
-@keyframes fadeOut {
-  0%,70% { opacity: 1; }
-  100% { opacity: 0; }
-}
+@keyframes fadeOut { 0%,70%{opacity:1} 100%{opacity:0} }
 
-#game-over {
-  text-align: center;
-  padding: 30px;
-}
-#game-over h2 { color: var(--danger); margin-bottom: 12px; }
-#game-over .stats { color: #aaa; margin-bottom: 16px; font-size: 0.9em; }
-
-.hero-info {
-  padding: 8px;
-  background: rgba(240,192,64,0.08);
-  border: 1px solid rgba(240,192,64,0.2);
-  border-radius: 8px;
-  margin-bottom: 8px;
+/* Battle log */
+#battle-log {
+  position: absolute; bottom: 8px; left: 8px; right: 8px;
+  max-height: 80px; overflow-y: auto; font-size: 0.7em;
+  color: #ccc; background: rgba(0,0,0,0.6); padding: 4px 8px;
+  border-radius: 4px; pointer-events: none; z-index: 5;
+  line-height: 1.4;
 }
 </style>
 </head>
 <body>
-<div id="game"></div>
+<div id="container">
+  <div id="top-bar">
+    <h1>🏰 超级幻想王国</h1>
+    <div id="res-bar"></div>
+    <div id="phase-info"></div>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="gc"></canvas>
+    <div id="menu-overlay" style="display:none;"><div id="menu-panel"></div></div>
+    <div id="battle-log"></div>
+  </div>
+  <div id="bottom-bar"></div>
+</div>
 
 <script>
-// ============ 游戏数据定义 ============
-
-const BUILDINGS = {
-  lumberMill: { name:'🪓 伐木场', desc:'日产木材+2', cost:{gold:3}, prod:{wood:2}, maxCount:5 },
-  quarry:    { name:'⛏️ 采石场', desc:'日产石料+2', cost:{gold:3}, prod:{stone:2}, maxCount:5 },
-  farm:      { name:'🌾 农场',   desc:'日产食物+3', cost:{gold:5}, prod:{food:3}, maxCount:5 },
-  tavern:    { name:'🍺 酒馆',   desc:'每夜回复所有单位25%HP', cost:{wood:8,food:4}, maxCount:1, special:'healPercent' },
-  wall:      { name:'🏰 城墙',   desc:'所有单位+3防御', cost:{stone:10}, maxCount:3, special:'wall' },
+// ==================== 游戏常量 ====================
+const TILE = 56;  // 格子大小（逻辑像素）
+const MAP_W = 12, MAP_H = 7; // 地图格数
+const COLORS = {
+  grass: '#3d5a1e', grass2: '#4a6b28', path: '#8b7355',
+  wall: '#6b6b6b', lumber: '#8b4513', quarry: '#888',
+  farm: '#c8b400', tavern: '#c05020', barracks: '#555',
+  night: '#0d0d2a', hero: '#f0c040', ally: '#4ade80',
+  enemy: '#ef4444', boss: '#ff4444',
 };
-
-const UNITS = {
-  swordsman: { name:'⚔️ 剑士',   desc:'前排坦克', cost:{wood:5,gold:4},  hp:40, atk:7,  def:5, role:'tank', icon:'🛡️' },
-  archer:    { name:'🏹 弓手',   desc:'后排输出', cost:{wood:3,gold:6},  hp:25, atk:12, def:2, role:'dps',  icon:'🎯' },
-  priest:    { name:'✝️ 僧侣',   desc:'治疗友军', cost:{food:5,gold:5},  hp:20, atk:3,  def:1, role:'healer', icon:'💚', healAmount:5 },
-  knight:    { name:'🐴 骑士',   desc:'精英全能', cost:{wood:10,stone:5,gold:12}, hp:55, atk:16, def:6, role:'elite', icon:'⚜️' },
+const BUILD_DEFS = {
+  lumber: { name:'伐木场', icon:'🪓', color:COLORS.lumber, cost:{gold:3}, prod:{wood:2}, max:5, desc:'日产木材+2' },
+  quarry: { name:'采石场', icon:'⛏️', color:COLORS.quarry, cost:{gold:3}, prod:{stone:2}, max:5, desc:'日产石料+2' },
+  farm:   { name:'农场', icon:'🌾', color:COLORS.farm, cost:{gold:5}, prod:{food:3}, max:5, desc:'日产食物+3' },
+  tavern: { name:'酒馆', icon:'🍺', color:COLORS.tavern, cost:{wood:8,food:4}, max:1, desc:'战后回复25%HP' },
+  wall:   { name:'城墙', icon:'🧱', color:COLORS.wall, cost:{stone:10}, max:4, desc:'全单位+3防御' },
 };
-
-const ITEMS = {
-  sharpSword:  { name:'🗡️ 利刃',  desc:'所有单位攻击+3',  cost:{glory:8},  effect:u=>{u.atk+=3;u.baseAtk+=3} },
-  ironArmor:   { name:'🛡️ 铁甲',  desc:'所有单位防御+2',  cost:{glory:8},  effect:u=>{u.def+=2;u.baseDef+=2} },
-  vitality:    { name:'❤️ 活力',  desc:'所有单位生命+10', cost:{glory:10}, effect:u=>{u.maxHp+=10;u.hp+=10;u.baseMaxHp+=10} },
-  heroBlade:   { name:'⚡ 英雄刃', desc:'英雄攻击力+8',    cost:{glory:12}, effect:'heroAtk' },
-  healHerb:    { name:'🌿 药草',  desc:'每波结束后回复10%HP', cost:{glory:15}, effect:'waveHeal' },
+const UNIT_DEFS = {
+  sword: { name:'剑士', icon:'🛡️', cost:{wood:5,gold:4}, hp:40, atk:7, def:5, role:'tank', color:'#60a5fa', desc:'前排坦克' },
+  archer:{ name:'弓手', icon:'🏹', cost:{wood:3,gold:6}, hp:25, atk:12,def:2, role:'dps', color:'#34d399', desc:'后排输出' },
+  priest:{ name:'僧侣', icon:'💚', cost:{food:5,gold:5}, hp:20, atk:3, def:1, role:'healer', color:'#fbbf24', desc:'治疗友军', heal:6 },
+  knight:{ name:'骑士', icon:'⚜️', cost:{wood:10,stone:5,gold:12}, hp:55, atk:16,def:6, role:'elite', color:'#c084fc', desc:'精英全能' },
 };
-
+const ITEM_DEFS = {
+  sharp:{ name:'利刃', icon:'🗡️', cost:{glory:8}, desc:'全体攻击+3', apply(s){ for(let u of s.units){u.atk+=3;u.baseAtk+=3} } },
+  armor:{ name:'铁甲', icon:'🛡️', cost:{glory:8}, desc:'全体防御+2', apply(s){ for(let u of s.units){u.def+=2;u.baseDef+=2} } },
+  vital:{ name:'活力', icon:'❤️', cost:{glory:10}, desc:'全体生命+10', apply(s){ for(let u of s.units){u.maxHp+=10;u.hp+=10} } },
+  heroB:{ name:'英雄刃', icon:'⚡', cost:{glory:12}, desc:'英雄攻击+8', apply(s){ s.hero.atk+=8;s.hero.baseAtk+=8 } },
+  herb: { name:'药草', icon:'🌿', cost:{glory:15}, desc:'每波后回10%HP', apply(s){} },
+};
 const MONSTERS = [
-  { name:'哥布林',  icon:'👺', hp:12, atk:4, def:1 },
-  { name:'骷髅兵',  icon:'💀', hp:15, atk:5, def:2 },
-  { name:'暗影狼',  icon:'🐺', hp:10, atk:8, def:0 },
-  { name:'石像鬼',  icon:'🗿', hp:20, atk:3, def:4 },
-  { name:'小恶魔',  icon:'👿', hp:18, atk:6, def:1 },
-  { name:'幽灵',    icon:'👻', hp:12, atk:7, def:0 },
-  { name:'巨蜘蛛',  icon:'🕷️', hp:25, atk:5, def:2 },
-  { name:'火焰魔',  icon:'🔥', hp:22, atk:9, def:1 },
+  { name:'哥布林', icon:'👺', hp:12, atk:4, def:1, color:'#86efac' },
+  { name:'骷髅', icon:'💀', hp:15, atk:5, def:2, color:'#d4d4d8' },
+  { name:'暗狼', icon:'🐺', hp:10, atk:8, def:0, color:'#6b7280' },
+  { name:'石像鬼', icon:'🗿', hp:20, atk:3, def:4, color:'#78716c' },
+  { name:'恶魔', icon:'👿', hp:18, atk:6, def:1, color:'#f87171' },
+  { name:'幽灵', icon:'👻', hp:12, atk:7, def:0, color:'#a78bfa' },
+  { name:'蜘蛛', icon:'🕷️', hp:25, atk:5, def:2, color:'#4b5563' },
+  { name:'炎魔', icon:'🔥', hp:22, atk:9, def:1, color:'#f97316' },
 ];
-
 const BOSSES = [
-  { name:'哥布林王',  icon:'👹', hp:60, atk:12, def:4 },
-  { name:'暗黑法师',  icon:'🧙‍♂️', hp:80, atk:15, def:3 },
-  { name:'亡灵将军',  icon:'💀⚔️', hp:100, atk:18, def:5 },
-  { name:'巨龙',      icon:'🐲', hp:150, atk:22, def:6 },
-  { name:'最终魔王',  icon:'👑💀', hp:200, atk:28, def:8 },
+  { name:'哥布林王', icon:'👹', hp:60, atk:12, def:4, color:'#dc2626' },
+  { name:'暗黑法师', icon:'🧙‍♂️', hp:80, atk:15, def:3, color:'#7c3aed' },
+  { name:'亡灵将军', icon:'💀⚔️', hp:100, atk:18, def:5, color:'#991b1b' },
+  { name:'巨龙', icon:'🐲', hp:150, atk:22, def:6, color:'#b45309' },
+  { name:'魔王', icon:'👑💀', hp:200, atk:28, def:8, color:'#7f1d1d' },
 ];
-
 const HEROES = [
-  { name:'火焰领主',   icon:'🔥', ability:'烈焰风暴', abDesc:'对所有怪物造成英雄攻击力×2的伤害', abCooldown:3 },
-  { name:'冰霜女王',   icon:'❄️', ability:'极寒冰封', abDesc:'冻结所有怪物1回合（跳过攻击）', abCooldown:4 },
-  { name:'圣光骑士',   icon:'✨', ability:'神圣护盾', abDesc:'所有友军获得英雄攻击力×1.5的护盾', abCooldown:3 },
+  { name:'火焰领主', icon:'🔥', ab:'烈焰风暴', abDesc:'对所有怪物造成英雄攻击×2伤害', cd:3, color:'#f97316' },
+  { name:'冰霜女王', icon:'❄️', ab:'极寒冰封', abDesc:'冻结所有怪物1回合', cd:4, color:'#38bdf8' },
+  { name:'圣光骑士', icon:'✨', ab:'神圣护盾', abDesc:'全体回复英雄攻击×1.5的HP', cd:3, color:'#fbbf24' },
 ];
 
-// ============ 游戏状态 ============
-const state = {
-  phase: 'pickHero', // pickHero | day | night | gameOver
-  day: 0,
-  wave: 0,
-  maxWaves: 3,
-  resources: { wood:15, stone:10, food:12, gold:30, glory:0 },
-  buildings: {},
-  units: [],
-  hero: null,
-  heroAbilityReady: true,
-  heroAbilityTurns: 0,
-  monsters: [],
-  bossDefeated: 0,
-  items: [],
-  unitIdCounter: 0,
-  // daily production cache
-  dailyProd: { wood:0, stone:0, food:0, gold:0 },
+// ==================== 游戏状态 ====================
+const S = {
+  phase: 'heroSelect', // heroSelect|day|night|gameOver
+  day:0, wave:0, maxWaves:3, winDays:15,
+  res:{wood:15,stone:10,food:12,gold:30,glory:0},
+  buildings:[], // {type, col, row}
+  units:[],     // {type,name,icon,hp,maxHp,atk,def,role,color,heal,baseAtk,baseDef,x,y,tx,ty,alive}
+  hero:null,    // {name,icon,hp,maxHp,atk,def,ab,cd,cdLeft,color,baseAtk,baseDef,...}
+  monsters:[],  // {name,icon,hp,maxHp,atk,def,color,x,y,tx,ty,alive,isBoss,frozen}
+  items:[],
+  bossKills:0, unitId:0,
+  dailyProd:{wood:0,stone:0,food:0,gold:0},
+  buildSlot:null, // {col,row} selected build slot
+  particles:[],
+  battleLog:[],
+  animFrame:0,
+  shakeTimer:0,
 };
 
-// ============ 渲染引擎 ============
-const $game = document.getElementById('game');
+// ==================== Canvas & 工具函数 ====================
+const wrap = document.getElementById('canvas-wrap');
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+let cw, ch, ox, oy, scale;
+function resize() {
+  const r = wrap.getBoundingClientRect();
+  cw = r.width; ch = r.height;
+  canvas.width = cw * (window.devicePixelRatio||1);
+  canvas.height = ch * (window.devicePixelRatio||1);
+  ctx.setTransform((window.devicePixelRatio||1),0,0,(window.devicePixelRatio||1),0,0);
+  // 计算缩放以适配地图
+  const mapPxW = MAP_W * TILE;
+  const mapPxH = MAP_H * TILE;
+  scale = Math.min(cw / mapPxW, ch / mapPxH, 1.2);
+  ox = (cw - mapPxW * scale) / 2;
+  oy = (ch - mapPxH * scale) / 2;
+}
+window.addEventListener('resize', resize);
+resize();
 
+function canAfford(cost) { for(let[k,v]of Object.entries(cost)){ if((S.res[k]||0)<v) return false; } return true; }
+function pay(cost) { for(let[k,v]of Object.entries(cost)) S.res[k]=(S.res[k]||0)-v; }
 function toast(msg) {
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2100);
+  const e = document.createElement('div'); e.className='toast'; e.textContent=msg;
+  document.body.appendChild(e); setTimeout(()=>e.remove(),2100);
 }
+const R = (arr) => arr[Math.floor(Math.random()*arr.length)];
 
-function canAfford(cost) {
-  for (const [k, v] of Object.entries(cost)) {
-    if ((state.resources[k] || 0) < v) return false;
-  }
-  return true;
-}
-
-function pay(cost) {
-  for (const [k, v] of Object.entries(cost)) {
-    state.resources[k] = (state.resources[k] || 0) - v;
+// ==================== Canvas 绘制 ====================
+function drawGrass() {
+  for(let r=0; r<MAP_H; r++) for(let c=0; c<MAP_W; c++) {
+    const x = ox + c*TILE*scale, y = oy + r*TILE*scale, s = TILE*scale;
+    ctx.fillStyle = ((c+r)%2===0) ? COLORS.grass : COLORS.grass2;
+    ctx.fillRect(x, y, s, s);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeRect(x, y, s, s);
   }
 }
 
-// ============ 阶段: 选择英雄 ============
-function renderPickHero() {
-  state.phase = 'pickHero';
-  const cards = HEROES.map((h, i) => `
-    <div class="card" onclick="pickHero(${i})" style="text-align:center; padding:16px;">
-      <div style="font-size:3em;">${h.icon}</div>
-      <div class="name" style="font-size:1.1em;">${h.name}</div>
-      <div class="desc" style="margin:8px 0;">🎯 ${h.ability}: ${h.abDesc}</div>
-      <div style="color:#a78bfa; font-size:0.8em;">冷却: ${h.abCooldown} 回合</div>
-    </div>
-  `).join('');
-
-  $game.innerHTML = `
-    <div id="header">
-      <h1>🏰 超级幻想王国</h1>
-      <div style="color:#aaa">简易可玩版</div>
-    </div>
-    <div id="main" style="justify-content:center; align-items:center;">
-      <div style="text-align:center; max-width:600px;">
-        <h2 style="color:var(--gold); margin-bottom:8px;">⚔️ 选择你的守护者</h2>
-        <p style="color:#aaa; margin-bottom:16px; font-size:0.9em;">
-          白天建造王国、招募军队 → 夜晚抵御怪物入侵<br>
-          存活 15 天即可胜利！
-        </p>
-        <div class="grid-3">${cards}</div>
-      </div>
-    </div>
-  `;
+function drawPath(col, row) {
+  const x = ox + col*TILE*scale, y = oy + row*TILE*scale, s = TILE*scale;
+  ctx.fillStyle = COLORS.path;
+  ctx.fillRect(x+4*scale, y+4*scale, s-8*scale, s-8*scale);
 }
 
-function pickHero(idx) {
-  const h = HEROES[idx];
-  state.hero = {
-    name: h.name,
-    icon: h.icon,
-    hp: 60, maxHp: 60,
-    atk: 12, baseAtk: 12,
-    def: 3, baseDef: 3,
-    ability: h.ability,
-    abDesc: h.abDesc,
-    abCooldown: h.abCooldown,
-  };
-  state.heroAbilityReady = true;
-  state.heroAbilityTurns = 0;
-  state.day = 1;
-  startDay();
+function drawBuilding(b) {
+  const cfg = BUILD_DEFS[b.type];
+  const x = ox + b.col*TILE*scale, y = oy + b.row*TILE*scale, s = TILE*scale;
+  const pad = 6*scale;
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(x+pad+2*scale, y+pad+2*scale, s-pad*2, s-pad*2);
+  // building body
+  ctx.fillStyle = cfg.color;
+  ctx.fillRect(x+pad, y+pad, s-pad*2, s-pad*2);
+  // roof triangle
+  ctx.fillStyle = shadeColor(cfg.color, -30);
+  ctx.beginPath();
+  ctx.moveTo(x+pad, y+pad);
+  ctx.lineTo(x+s/2, y+pad/2);
+  ctx.lineTo(x+s-pad, y+pad);
+  ctx.closePath();
+  ctx.fill();
+  // border
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1.5*scale;
+  ctx.strokeRect(x+pad, y+pad, s-pad*2, s-pad*2);
+  // icon
+  ctx.font = `${TILE*0.4*scale}px serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(cfg.icon, x+s/2, y+s*0.65);
+  // quantity badge
+  const count = S.buildings.filter(bb=>bb.type===b.type&&bb.col===b.col&&bb.row===b.row).length;
+  if (count > 1) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.beginPath();
+    ctx.arc(x+s-pad-5*scale, y+pad+5*scale, 8*scale, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${9*scale}px sans-serif`;
+    ctx.fillText(count, x+s-pad-5*scale, y+pad+8*scale);
+  }
 }
 
-// ============ 阶段: 白天 ============
-function calcDailyProd() {
-  const p = { wood:0, stone:0, food:0, gold:0 };
-  for (const [key, count] of Object.entries(state.buildings)) {
-    const cfg = BUILDINGS[key];
-    if (cfg.prod) {
-      for (const [res, amt] of Object.entries(cfg.prod)) {
-        p[res] = (p[res] || 0) + amt * count;
+function drawBuildSlot(col, row) {
+  if (S.phase !== 'day') return;
+  const x = ox + col*TILE*scale, y = oy + row*TILE*scale, s = TILE*scale;
+  const isSlot = S.buildSlot && S.buildSlot.col===col && S.buildSlot.row===row;
+  const pulse = Math.sin(Date.now()/500) * 0.3 + 0.7;
+  ctx.strokeStyle = isSlot ? `rgba(240,192,64,${pulse})` : 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = isSlot ? 3*scale : 1*scale;
+  ctx.setLineDash(isSlot ? [4*scale, 4*scale] : []);
+  ctx.strokeRect(x+2*scale, y+2*scale, s-4*scale, s-4*scale);
+  ctx.setLineDash([]);
+  if (isSlot) {
+    ctx.fillStyle = `rgba(240,192,64,${pulse*0.2})`;
+    ctx.fillRect(x+2*scale, y+2*scale, s-4*scale, s-4*scale);
+    // "+" indicator
+    ctx.fillStyle = `rgba(240,192,64,${pulse})`;
+    ctx.font = `${TILE*0.5*scale}px sans-serif`; ctx.textAlign = 'center';
+    ctx.fillText('+', x+s/2, y+s*0.6);
+  }
+}
+
+function drawHeroUnit(x, y, hero, isNight) {
+  const s = TILE * 0.7 * scale;
+  const px = x - s/2, py = y - s/2;
+  // glow
+  if (isNight) {
+    ctx.fillStyle = 'rgba(240,192,64,0.3)';
+    ctx.beginPath(); ctx.arc(x, y, s*0.7, 0, Math.PI*2); ctx.fill();
+  }
+  // body
+  ctx.fillStyle = COLORS.hero;
+  ctx.beginPath(); ctx.arc(x, y, s/2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2*scale;
+  ctx.stroke();
+  // icon
+  ctx.font = `${s*0.8}px serif`; ctx.textAlign = 'center';
+  ctx.fillText(hero.icon, x, y+s*0.25);
+  // HP bar
+  drawHpBar(x, y-s*0.65, s*0.8, 3*scale, hero.hp, hero.maxHp);
+  // name
+  ctx.fillStyle = '#fff'; ctx.font = `bold ${9*scale}px sans-serif`;
+  ctx.fillText(hero.name, x, y+s*0.7);
+}
+
+function drawUnitSprite(u) {
+  const x = u.x, y = u.y, s = TILE*0.55*scale;
+  if (!u.alive) {
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(x, y, s/2, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // tombstone
+    ctx.font = `${s}px serif`; ctx.textAlign = 'center';
+    ctx.fillText('🪦', x, y+s*0.3);
+    return;
+  }
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x, y+s*0.35, s*0.35, s*0.1, 0, 0, Math.PI*2); ctx.fill();
+  // body (rounded rect)
+  const bx = x - s*0.35, by = y - s*0.4, bw = s*0.7, bh = s*0.8;
+  ctx.fillStyle = u.color;
+  roundRect(bx, by, bw, bh, 4*scale);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5*scale;
+  roundRect(bx, by, bw, bh, 4*scale);
+  ctx.stroke();
+  // icon
+  ctx.font = `${s*0.65}px serif`; ctx.textAlign = 'center';
+  ctx.fillText(u.icon, x, y+s*0.2);
+  // HP bar
+  drawHpBar(x, by-6*scale, bw, 2.5*scale, u.hp, u.maxHp);
+}
+
+function drawMonsterSprite(m) {
+  const x = m.x, y = m.y, s = TILE*0.5*scale;
+  if (!m.alive) {
+    ctx.globalAlpha = 0.2;
+    ctx.font = `${s}px serif`; ctx.textAlign = 'center';
+    ctx.fillText('💀', x, y);
+    ctx.globalAlpha = 1;
+    return;
+  }
+  // frozen overlay
+  if (m.frozen) {
+    ctx.fillStyle = 'rgba(147,197,253,0.3)';
+    const fs = s*1.2;
+    ctx.beginPath(); ctx.arc(x, y, fs/2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#93c5fd'; ctx.font = `${fs*0.5}px serif`; ctx.textAlign='center';
+    ctx.fillText('❄️', x, y-s*0.2);
+  }
+  // body
+  const bw = s*(m.isBoss?1.2:0.8), bh = s*(m.isBoss?1.2:0.8);
+  ctx.fillStyle = m.color;
+  ctx.beginPath(); ctx.arc(x, y, bw/2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = m.isBoss ? '#ff0' : 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = m.isBoss?3*scale:1.5*scale;
+  ctx.stroke();
+  // boss crown
+  if (m.isBoss) {
+    ctx.font = `${s*0.6}px serif`; ctx.textAlign='center';
+    ctx.fillText('👑', x, y-bh*0.55);
+    // aura
+    ctx.strokeStyle = `rgba(255,0,0,${0.2+Math.sin(Date.now()/300)*0.1})`;
+    ctx.lineWidth = 2*scale;
+    ctx.beginPath(); ctx.arc(x, y, bw*0.75, 0, Math.PI*2); ctx.stroke();
+  }
+  // icon
+  ctx.font = `${s*0.7}px serif`; ctx.textAlign = 'center';
+  ctx.fillText(m.icon, x, y+s*0.15);
+  // HP bar
+  drawHpBar(x, y-bh*0.6, bw*0.7, 2.5*scale, m.hp, m.maxHp);
+}
+
+function drawHpBar(x, y, w, h, hp, max) {
+  const pct = Math.max(0, hp/max);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(x-w/2, y, w, h);
+  ctx.fillStyle = pct>0.6?'#4ade80':pct>0.3?'#fbbf24':'#ef4444';
+  ctx.fillRect(x-w/2, y, w*pct, h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 0.5;
+  ctx.strokeRect(x-w/2, y, w, h);
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function shadeColor(color, percent) {
+  const num = parseInt(color.replace('#',''), 16);
+  const amt = Math.round(2.55*percent);
+  const R = Math.max(0,Math.min(255,(num>>16)+amt));
+  const G = Math.max(0,Math.min(255,((num>>8)&0x00FF00)+amt));
+  const B = Math.max(0,Math.min(255,(num&0x0000FF)+amt));
+  return '#'+(0x1000000+R*0x10000+G*0x100+B).toString(16).slice(1);
+}
+
+// ==================== 粒子系统 ====================
+function spawnParticles(x, y, color, count) {
+  for(let i=0; i<count; i++) {
+    const angle = Math.random()*Math.PI*2;
+    const speed = 2+Math.random()*4;
+    S.particles.push({
+      x, y, color,
+      vx: Math.cos(angle)*speed*scale,
+      vy: Math.sin(angle)*speed*scale-2*scale,
+      life: 30+Math.random()*20, maxLife:50,
+      size: 2+Math.random()*3*scale,
+    });
+  }
+}
+
+function updateParticles() {
+  S.particles = S.particles.filter(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.15*scale;
+    p.life--;
+    return p.life > 0;
+  });
+}
+
+function drawParticles() {
+  for(const p of S.particles) {
+    const alpha = p.life/p.maxLife;
+    ctx.fillStyle = p.color.replace(')', `,${alpha})`).replace('rgb', 'rgba');
+    if(p.color.startsWith('#')) {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+    }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size*alpha, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ==================== 伤害数字 ====================
+function spawnDmgNum(x, y, text, color) {
+  S.particles.push({
+    x, y, text, color, isText: true,
+    vy: -3*scale, life: 40, maxLife: 40,
+  });
+}
+// (reusing particle system for dmg numbers)
+function drawDmgNums() {
+  for(const p of S.particles) {
+    if (!p.isText) continue;
+    const alpha = p.life/p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${12*scale}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(p.text, p.x, p.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ==================== 地图绘制 ====================
+function drawDay() {
+  drawGrass();
+  // draw paths between buildings
+  for(let r=0; r<MAP_H; r++) {
+    for(let c=0; c<MAP_W; c++) {
+      const hasB = S.buildings.some(b=>b.col===c&&b.row===r);
+      if (!hasB) drawBuildSlot(c, r);
+    }
+  }
+  // draw buildings
+  for(const b of S.buildings) drawBuilding(b);
+  // draw hero on map center
+  const hx = ox + (MAP_W/2)*TILE*scale;
+  const hy = oy + (MAP_H-1.5)*TILE*scale;
+  drawHeroUnit(hx, hy, S.hero, false);
+  // draw units around hero
+  const alive = S.units.filter(u=>u.alive);
+  alive.forEach((u,i) => {
+    const angle = (i/alive.length)*Math.PI*2 - Math.PI/2;
+    const rad = TILE*1.2*scale;
+    u.x = hx + Math.cos(angle)*rad;
+    u.y = hy + Math.sin(angle)*rad;
+    drawUnitSprite(u);
+  });
+  // show daily production
+  if (S.dailyProd) {
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    const bx = ox + (MAP_W-3)*TILE*scale, by = oy + 0.5*TILE*scale;
+    ctx.fillRect(bx, by, 2.5*TILE*scale, 2.2*TILE*scale);
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${10*scale}px sans-serif`; ctx.textAlign='left';
+    let li=0;
+    for(const [k,v] of Object.entries(S.dailyProd)) {
+      if(v>0) { ctx.fillText(`${resIcon(k)} +${v}/天`, bx+8*scale, by+16*scale+li*14*scale); li++; }
+    }
+  }
+}
+
+function resIcon(r) { return {wood:'🌲',stone:'🪨',food:'🌾',gold:'💰',glory:'⭐'}[r]||r; }
+
+function drawNight() {
+  // dark background
+  ctx.fillStyle = COLORS.night;
+  ctx.fillRect(0, 0, cw, ch);
+  // moon
+  ctx.fillStyle = 'rgba(255,255,200,0.3)';
+  ctx.beginPath(); ctx.arc(cw*0.85, ch*0.12, 30*scale, 0, Math.PI*2); ctx.fill();
+  // ground line
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, ch*0.82); ctx.lineTo(cw, ch*0.82); ctx.stroke();
+  // gate/fortress on the right
+  const gx = cw*0.88, gy = ch*0.6, gw = 40*scale, gh = ch*0.25;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(gx, gy, gw, gh);
+  ctx.fillStyle = '#555';
+  ctx.fillRect(gx+gw*0.1, gy, gw*0.8, gh*0.6);
+  // battlements
+  for(let i=0; i<3; i++) {
+    ctx.fillStyle = '#444';
+    ctx.fillRect(gx+gw*0.15+gw*0.25*i, gy-8*scale, gw*0.15, 10*scale);
+  }
+  // "gate" arch
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(gx+gw/2, gy+gh*0.65, gw*0.25, Math.PI, 0); ctx.fill();
+
+  // units on left
+  const alive = S.units.filter(u=>u.alive);
+  const allCount = Math.max(alive.length, 4);
+  alive.forEach((u,i) => {
+    const lx = cw*0.08 + (i%4)*TILE*1.1*scale;
+    const ly = ch*0.3 + Math.floor(i/4)*TILE*1.2*scale;
+    u.x += (lx-u.x)*0.15; u.y += (ly-u.y)*0.15;
+    drawUnitSprite(u);
+  });
+  // hero in front
+  const hx = cw*0.05, hy = ch*0.5;
+  S.hero._tx = S.hero._tx || hx; S.hero._ty = S.hero._ty || hy;
+  S.hero._tx += (hx-S.hero._tx)*0.15;
+  S.hero._ty += (hy-S.hero._ty)*0.15;
+  drawHeroUnit(S.hero._tx, S.hero._ty, S.hero, true);
+
+  // monsters on right
+  const monAlive = S.monsters.filter(m=>m.alive);
+  monAlive.forEach((m,i) => {
+    const mx = cw*0.65 + (i%3)*TILE*1.2*scale;
+    const my = ch*0.25 + Math.floor(i/3)*TILE*1.3*scale;
+    m.x += (mx-m.x)*0.12; m.y += (my-m.y)*0.12;
+    drawMonsterSprite(m);
+  });
+}
+
+// ==================== 战斗 ====================
+function resolveBattle() {
+  const log = [];
+  const allies = S.units.filter(u=>u.alive);
+  const hero = S.hero;
+  let enemies = S.monsters.filter(m=>m.alive);
+  if ((allies.length===0) && (!hero||hero.hp<=0)) {
+    log.push('💀 没有单位可以战斗！');
+    return {log, won:false};
+  }
+  if (enemies.length===0) return {log, won:true};
+  const wallBonus = (S.buildings.filter(b=>b.type==='wall').length)*3;
+  // hero attacks
+  if (hero&&hero.hp>0&&enemies.length>0) {
+    const t = enemies[0];
+    const dmg = Math.max(1, hero.atk - t.def);
+    t.hp -= dmg; t.alive = t.hp>0;
+    spawnDmgNum(t.x, t.y-10*scale, `-${dmg}`, '#fbbf24');
+    spawnParticles(t.x, t.y, 'rgb(240,192,64)', 5);
+    log.push(`🦸英雄攻击→${t.icon}${t.name} -${dmg}`);
+    enemies = enemies.filter(m=>m.alive);
+  }
+  // allies attack
+  for(const u of allies) {
+    if(enemies.length===0) break;
+    const t = enemies[Math.floor(Math.random()*enemies.length)];
+    const dmg = Math.max(1, u.atk-t.def);
+    t.hp -= dmg; t.alive = t.hp>0;
+    spawnDmgNum(t.x, t.y-5*scale, `-${dmg}`, '#ef4444');
+    spawnParticles(t.x, t.y, 'rgb(255,200,200)', 3);
+    log.push(`${u.icon}${u.name}→${t.icon}${t.name} -${dmg}`);
+    if (!t.alive) {
+      spawnParticles(t.x, t.y, 'rgb(255,255,255)', 10);
+      log.push(`💥 ${t.name}被击败！`);
+    }
+    enemies = enemies.filter(m=>m.alive);
+  }
+  // healer heals
+  for(const u of allies) {
+    if(u.role==='healer'&&u.heal>0) {
+      const targets = [...allies, hero].filter(a=>a&&a.hp>0&&a.hp<a.maxHp).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
+      if(targets.length>0) {
+        const t = targets[0]; const h = u.heal;
+        t.hp = Math.min(t.maxHp, t.hp+h);
+        spawnDmgNum(t.x, t.y-5*scale, `+${h}`, '#4ade80');
+        log.push(`💚${u.name}治疗→${t.name||'英雄'}+${h}`);
       }
     }
   }
-  state.dailyProd = p;
+  // enemies attack
+  for(const m of enemies) {
+    if(!m.alive||m.frozen) continue;
+    const targets = [...allies, hero].filter(a=>a&&a.hp>0);
+    if(targets.length===0) break;
+    const tanks = targets.filter(a=>a.role==='tank'||a.role==='elite');
+    const t = tanks.length>0 ? R(tanks) : R(targets);
+    const dmg = Math.max(1, m.atk-(t.def+wallBonus));
+    t.hp -= dmg;
+    spawnDmgNum(t.x||S.hero._tx, (t.y||S.hero._ty)-5*scale, `-${dmg}`, '#fff');
+    spawnParticles(t.x||S.hero._tx, t.y||S.hero._ty, 'rgb(255,100,100)', 3);
+    log.push(`${m.icon}${m.name}→${t.name||'英雄'} -${dmg}`);
+    if(t.hp<=0) {
+      if(t===hero) { hero.hp=0; log.push('💀 英雄倒下了！'); }
+      else { t.alive=false; t.hp=0; log.push(`💀 ${t.name}阵亡！`); }
+    }
+  }
+  // unfreeze
+  for(const m of S.monsters) delete m.frozen;
+  enemies = S.monsters.filter(m=>m.alive);
+  const won = enemies.length===0;
+  if(won) {
+    const isBoss = S.wave%5===0;
+    const glory = isBoss?5+S.day:2+Math.floor(S.day/3);
+    S.res.glory += glory;
+    log.push(`⚔️ 波次${S.wave}击退！⭐+${glory}`);
+    if(isBoss) { S.bossKills++; log.push('👑 Boss被击败！'); }
+    if(S.items.includes('herb')) {
+      for(let u of S.units) { if(u.alive) u.hp=Math.min(u.maxHp,u.hp+Math.floor(u.maxHp*0.1)); }
+      if(hero&&hero.hp>0) hero.hp=Math.min(hero.maxHp,hero.hp+Math.floor(hero.maxHp*0.1));
+      log.push('🌿药草回复10%HP');
+    }
+    // tavern heal
+    if(S.buildings.some(b=>b.type==='tavern')) {
+      for(let u of S.units) { if(u.alive) u.hp=Math.min(u.maxHp,u.hp+Math.floor(u.maxHp*0.25)); }
+      log.push('🍺酒馆回复25%HP');
+    }
+  }
+  return {log, won};
+}
+
+function useHeroAbility() {
+  const log = [];
+  const h = S.hero;
+  h.cdLeft = h.cd;
+  if(h.name==='火焰领主') {
+    const dmg = h.atk*2;
+    for(const m of S.monsters) {
+      if(!m.alive) continue;
+      m.hp -= Math.max(1,dmg-m.def);
+      m.alive = m.hp>0;
+      spawnParticles(m.x, m.y, 'rgb(255,150,50)', 8);
+      spawnDmgNum(m.x, m.y-5*scale, `-${Math.max(1,dmg-m.def)}`, '#f97316');
+    }
+    S.shakeTimer = 15;
+    log.push('🔥 烈焰风暴！全场怪物受到伤害！');
+  } else if(h.name==='冰霜女王') {
+    for(const m of S.monsters) { m.frozen = true; spawnParticles(m.x, m.y, 'rgb(147,197,253)', 5); }
+    log.push('❄️ 极寒冰封！所有怪物冻结1回合！');
+  } else if(h.name==='圣光骑士') {
+    const shield = Math.floor(h.atk*1.5);
+    for(let u of S.units) { if(u.alive) u.hp=Math.min(u.maxHp,u.hp+shield); }
+    if(h.hp>0) h.hp=Math.min(h.maxHp,h.hp+shield);
+    log.push(`✨ 神圣护盾！全体回复${shield}HP！`);
+  }
+  return log;
+}
+
+// ==================== 阶段管理 ====================
+function calcProd() {
+  const p = {wood:0,stone:0,food:0,gold:0};
+  for(const b of S.buildings) {
+    const cfg = BUILD_DEFS[b.type];
+    if(cfg.prod) for(const[k,v] of Object.entries(cfg.prod)) p[k]=(p[k]||0)+v;
+  }
+  S.dailyProd = p;
 }
 
 function startDay() {
-  state.phase = 'day';
-  state.wave = 0;
-  state.monsters = [];
-  state.heroAbilityReady = true;
-  state.heroAbilityTurns = 0;
-  // Reset unit HP
-  for (const u of state.units) u.hp = u.maxHp;
-  if (state.hero) state.hero.hp = state.hero.maxHp;
-  calcDailyProd();
-  renderDay();
-}
-
-function buyBuilding(key) {
-  const cfg = BUILDINGS[key];
-  if (!canAfford(cfg.cost)) { toast('💰 资源不足！'); return; }
-  const cur = state.buildings[key] || 0;
-  if (cur >= (cfg.maxCount || 99)) { toast('⚠️ 已达到最大建造数量'); return; }
-  pay(cfg.cost);
-  state.buildings[key] = cur + 1;
-  calcDailyProd();
-  renderDay();
-}
-
-function buyUnit(key) {
-  const cfg = UNITS[key];
-  if (!canAfford(cfg.cost)) { toast('💰 资源不足！'); return; }
-  pay(cfg.cost);
-  state.units.push({
-    id: ++state.unitIdCounter,
-    type: key,
-    name: cfg.name,
-    icon: cfg.icon,
-    hp: cfg.hp, maxHp: cfg.hp,
-    atk: cfg.atk, baseAtk: cfg.atk,
-    def: cfg.def, baseDef: cfg.def,
-    role: cfg.role,
-    healAmount: cfg.healAmount || 0,
+  S.phase = 'day'; S.wave = 0; S.monsters = []; S.particles = [];
+  S.hero.cdLeft = 0;
+  for(let u of S.units) { u.alive = true; u.hp = u.maxHp; }
+  S.hero.hp = S.hero.maxHp;
+  // init unit positions
+  const hx = ox + (MAP_W/2)*TILE*scale, hy = oy + (MAP_H-1.5)*TILE*scale;
+  S.units.forEach((u,i)=>{
+    u.x = hx+(Math.random()-0.5)*TILE*2*scale;
+    u.y = hy+(Math.random()-0.5)*TILE*2*scale;
   });
-  renderDay();
-  toast(`✅ 招募了 ${cfg.name}！`);
+  calcProd();
+  for(const[k,v] of Object.entries(S.dailyProd)) S.res[k]=(S.res[k]||0)+v;
+  updateUI();
 }
 
-function buyItem(key) {
-  const cfg = ITEMS[key];
-  if (!canAfford(cfg.cost)) { toast('⭐ 荣耀不足！'); return; }
-  if (state.items.includes(key)) { toast('⚠️ 已购买过此物品'); return; }
-  pay(cfg.cost);
-  state.items.push(key);
-  // Apply effect
-  if (key === 'heroAtk') {
-    state.hero.atk += 8;
-    state.hero.baseAtk += 8;
-  }
-  if (typeof cfg.effect === 'function') {
-    for (const u of state.units) cfg.effect(u);
-  }
-  renderDay();
-  toast(`✅ 获得了 ${cfg.name}！`);
-}
-
-function renderDay() {
-  calcDailyProd();
-  const bKeys = Object.keys(BUILDINGS);
-  const uKeys = Object.keys(UNITS);
-  const iKeys = Object.keys(ITEMS);
-
-  const buildCards = bKeys.map(k => {
-    const cfg = BUILDINGS[k];
-    const cur = state.buildings[k] || 0;
-    const maxed = cur >= (cfg.maxCount || 99);
-    const poor = !canAfford(cfg.cost);
-    const cls = (maxed || poor) ? 'card disabled' : 'card';
-    const costStr = Object.entries(cfg.cost).map(([r,v]) => `${resIcon(r)}${v}`).join(' ');
-    return `<div class="${cls}" onclick="buyBuilding('${k}')">
-      <div class="name">${cfg.name} <span style="color:#888">(${cur}/${cfg.maxCount||'∞'})</span></div>
-      <div class="desc">${cfg.desc}</div>
-      <div class="cost">${costStr}</div>
-    </div>`;
-  }).join('');
-
-  const unitCards = uKeys.map(k => {
-    const cfg = UNITS[k];
-    const poor = !canAfford(cfg.cost);
-    const cls = poor ? 'card disabled' : 'card';
-    const costStr = Object.entries(cfg.cost).map(([r,v]) => `${resIcon(r)}${v}`).join(' ');
-    return `<div class="${cls}" onclick="buyUnit('${k}')">
-      <div class="name">${cfg.name} ${cfg.icon}</div>
-      <div class="desc">HP:${cfg.hp} ATK:${cfg.atk} DEF:${cfg.def} | ${cfg.desc}</div>
-      <div class="cost">${costStr}</div>
-    </div>`;
-  }).join('');
-
-  // Show owned units
-  const unitCounts = {};
-  for (const u of state.units) { unitCounts[u.type] = (unitCounts[u.type] || 0) + 1; }
-  const ownedUnits = Object.entries(unitCounts).map(([k, v]) => {
-    return `<span class="owned-tag">${UNITS[k].icon} ${UNITS[k].name.split(' ')[1]}<span class="count">×${v}</span></span>`;
-  }).join('');
-
-  const itemCards = iKeys.map(k => {
-    const cfg = ITEMS[k];
-    const bought = state.items.includes(k);
-    const poor = !canAfford(cfg.cost);
-    const cls = (bought || poor) ? 'card disabled' : 'card';
-    const costStr = Object.entries(cfg.cost).map(([r,v]) => `${resIcon(r)}${v}`).join(' ');
-    return `<div class="${cls}" onclick="buyItem('${k}')">
-      <div class="name">${cfg.name} ${bought?'✅':''}</div>
-      <div class="desc">${cfg.desc}</div>
-      <div class="cost">${costStr}</div>
-    </div>`;
-  }).join('');
-
-  const heroBlock = state.hero ? `
-    <div class="hero-info">
-      🦸 <b>${state.hero.icon} ${state.hero.name}</b>
-      HP:${state.hero.hp}/${state.hero.maxHp} | ATK:${state.hero.atk} | DEF:${state.hero.def}
-      | 🎯 <span style="color:#a78bfa">${state.hero.ability}</span>
-    </div>
-  ` : '';
-
-  $game.innerHTML = `
-    <div id="header">
-      <h1>🏰 超级幻想王国</h1>
-      <div id="day-info">☀️ 第 <span>${state.day}</span> 天 · 白天阶段</div>
-    </div>
-    ${renderResBar()}
-    <div id="phase-banner" class="phase-day">☀️ 白 天 — 建造你的王国，为夜晚的战斗做准备 ☀️</div>
-    <div id="main">
-      <div id="day-panel">
-        ${heroBlock}
-        <div class="section-title">🏗️ 建造建筑</div>
-        <div class="grid-2">${buildCards}</div>
-        <div class="section-title">👥 招募单位 <span style="font-size:0.8em;color:#888">(已有: ${state.units.length})</span></div>
-        <div class="owned-list">${ownedUnits || '<span style="color:#555;font-size:0.8em;">还没有单位</span>'}</div>
-        <div class="grid-2">${unitCards}</div>
-        <div class="section-title">⭐ 荣耀商店 (荣耀: ${state.resources.glory})</div>
-        <div class="grid-2">${itemCards}</div>
-        <div style="text-align:center; margin-top:8px;">
-          <button class="btn btn-danger" onclick="startNight()">🌙 结束白天，迎接夜晚</button>
-          <div style="color:#888;font-size:0.8em;margin-top:4px;">每日资源产出将自动结算</div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ============ 阶段: 夜晚 ============
 function startNight() {
-  state.phase = 'night';
-  // Collect daily production
-  for (const [res, amt] of Object.entries(state.dailyProd)) {
-    state.resources[res] = (state.resources[res] || 0) + amt;
-  }
-  state.wave = 1;
+  S.phase = 'night'; S.wave = 1; S.particles = [];
   spawnWave();
-  renderNight();
+  // init night positions
+  for(let u of S.units) { u.x=cw*0.1; u.y=ch*0.3+Math.random()*ch*0.3; }
+  S.hero._tx = cw*0.05; S.hero._ty = ch*0.5;
+  for(let m of S.monsters) { m.x=cw*0.7+Math.random()*cw*0.2; m.y=ch*0.2+Math.random()*ch*0.5; }
+  updateUI();
 }
 
 function spawnWave() {
-  const isBoss = state.wave % 5 === 0;
-  if (isBoss) {
-    const bossIdx = Math.min(state.bossDefeated, BOSSES.length - 1);
-    const b = BOSSES[bossIdx];
-    const scale = 1 + state.day * 0.15;
-    state.monsters = [{
-      name: b.name, icon: b.icon,
-      hp: Math.floor(b.hp * scale), maxHp: Math.floor(b.hp * scale),
-      atk: Math.floor(b.atk * scale), def: Math.floor(b.def * scale),
-      isBoss: true
+  const isBoss = S.wave%5===0;
+  if(isBoss) {
+    const bi = Math.min(S.bossKills, BOSSES.length-1);
+    const b = BOSSES[bi];
+    const s = 1+S.day*0.15;
+    S.monsters = [{
+      ...b, hp:Math.floor(b.hp*s), maxHp:Math.floor(b.hp*s),
+      atk:Math.floor(b.atk*s), def:Math.floor(b.def*s),
+      x:cw*0.75, y:ch*0.35, alive:true, isBoss:true, frozen:false,
     }];
   } else {
-    const count = 2 + Math.floor(state.day / 3);
-    const scale = 1 + state.day * 0.1;
-    state.monsters = [];
-    for (let i = 0; i < count; i++) {
-      const m = MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
-      state.monsters.push({
-        name: m.name, icon: m.icon,
-        hp: Math.floor(m.hp * scale), maxHp: Math.floor(m.hp * scale),
-        atk: Math.floor(m.atk * scale), def: Math.floor(m.def * scale),
-        isBoss: false
+    const count = 2+Math.floor(S.day/3);
+    const s = 1+S.day*0.1;
+    S.monsters = [];
+    for(let i=0; i<count; i++) {
+      const m = R(MONSTERS);
+      S.monsters.push({
+        ...m, hp:Math.floor(m.hp*s), maxHp:Math.floor(m.hp*s),
+        atk:Math.floor(m.atk*s), def:Math.floor(m.def*s),
+        x:cw*0.7+Math.random()*cw*0.2, y:ch*0.2+Math.random()*ch*0.5,
+        alive:true, isBoss:false, frozen:false,
       });
     }
   }
 }
 
-function resolveBattle() {
-  const log = [];
-  const allies = state.units.filter(u => u.hp > 0);
-  const hero = state.hero;
-  let enemies = state.monsters.filter(m => m.hp > 0);
-  if (allies.length === 0 && (!hero || hero.hp <= 0)) {
-    log.push({ msg: '💀 没有单位可以战斗！', cls: '' });
-    return { log, won: false };
+function fightWave() {
+  const result = resolveBattle();
+  addBattleLog(result.log);
+  updateUI();
+  const alives = S.units.filter(u=>u.alive);
+  if(!result.won && alives.length===0 && (!S.hero||S.hero.hp<=0)) {
+    setTimeout(()=>endGame(false), 1500);
   }
-  if (enemies.length === 0) return { log, won: true };
-
-  // Apply wall bonus
-  const wallCount = state.buildings.wall || 0;
-  const wallBonus = wallCount * 3;
-
-  // Hero attacks first
-  if (hero && hero.hp > 0 && enemies.length > 0) {
-    const target = enemies[0];
-    const dmg = Math.max(1, hero.atk - target.def);
-    target.hp -= dmg;
-    log.push({ msg: `🦸 英雄攻击 → ${target.icon}${target.name} -${dmg}HP (剩${Math.max(0,target.hp)})`, cls: '' });
-  }
-
-  // Each ally attacks
-  for (const u of allies) {
-    if (enemies.length === 0) break;
-    const target = enemies[Math.floor(Math.random() * enemies.length)];
-    const dmg = Math.max(1, u.atk - target.def);
-    target.hp -= dmg;
-    const remaining = Math.max(0, target.hp);
-    log.push({ msg: `${u.icon}${u.name}攻击 → ${target.icon}${target.name} -${dmg}HP (剩${remaining})`, cls: 'log-dmg' });
-    enemies = enemies.filter(m => m.hp > 0);
-  }
-
-  // Healer heals
-  for (const u of allies) {
-    if (u.role === 'healer' && u.healAmount > 0) {
-      const lowest = [...allies, hero].filter(a => a && a.hp > 0 && a.hp < a.maxHp).sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0];
-      if (lowest) {
-        const heal = u.healAmount;
-        lowest.hp = Math.min(lowest.maxHp, lowest.hp + heal);
-        log.push({ msg: `💚 ${u.name}治疗 → ${lowest.name||lowest.icon} +${heal}HP`, cls: 'log-heal' });
-      }
-    }
-  }
-
-  // Enemies attack
-  for (const m of enemies) {
-    if (m.hp <= 0) continue;
-    const validTargets = [...allies, hero].filter(a => a && a.hp > 0);
-    if (validTargets.length === 0) break;
-    // prefer tank
-    const tanks = validTargets.filter(a => a.role === 'tank' || a.role === 'elite');
-    const target = tanks.length > 0 ? tanks[Math.floor(Math.random() * tanks.length)] : validTargets[Math.floor(Math.random() * validTargets.length)];
-    const dmg = Math.max(1, m.atk - (target.def + wallBonus));
-    target.hp -= dmg;
-    log.push({ msg: `${m.icon}${m.name}攻击 → ${target.name||target.icon} -${dmg}HP (剩${Math.max(0,target.hp)})`, cls: m.isBoss ? 'log-boss' : 'log-dmg' });
-  }
-
-  // Clean up dead
-  for (const u of state.units) { if (u.hp <= 0) u.hp = 0; }
-  if (hero && hero.hp <= 0) hero.hp = 0;
-  enemies = enemies.filter(m => m.hp > 0);
-  state.monsters = enemies;
-
-  const won = enemies.length === 0;
-  if (won) {
-    const isBoss = state.wave % 5 === 0;
-    const gloryGain = isBoss ? 5 + state.day : 2 + Math.floor(state.day / 3);
-    state.resources.glory += gloryGain;
-    log.push({ msg: `⚔️ 波次 ${state.wave} 击退！获得 ⭐${gloryGain} 荣耀`, cls: 'log-glory' });
-    if (isBoss) {
-      state.bossDefeated++;
-      log.push({ msg: `👑 Boss 被击败！`, cls: 'log-boss' });
-    }
-    // Wave heal
-    if (state.items.includes('healHerb')) {
-      for (const u of state.units) u.hp = Math.min(u.maxHp, u.hp + Math.floor(u.maxHp * 0.1));
-      if (hero) hero.hp = Math.min(hero.maxHp, hero.hp + Math.floor(hero.maxHp * 0.1));
-      log.push({ msg: '🌿 药草回复了10%生命值', cls: 'log-heal' });
-    }
-  }
-
-  return { log, won };
-}
-
-function heroAbility() {
-  if (!state.heroAbilityReady) return;
-  state.heroAbilityReady = false;
-  state.heroAbilityTurns = state.hero.abCooldown;
-  const log = [];
-  const hero = state.hero;
-
-  if (hero.name === '火焰领主') {
-    const dmg = hero.atk * 2;
-    for (const m of state.monsters) {
-      m.hp -= Math.max(1, dmg - m.def);
-    }
-    log.push({ msg: `🔥 烈焰风暴！对所有怪物造成 ${dmg} 伤害`, cls: 'log-dmg' });
-  } else if (hero.name === '冰霜女王') {
-    log.push({ msg: `❄️ 极寒冰封！所有怪物跳过下回合攻击`, cls: 'log-heal' });
-    // Mark enemies as frozen (skip next attack)
-    for (const m of state.monsters) m.frozen = true;
-  } else if (hero.name === '圣光骑士') {
-    const shield = Math.floor(hero.atk * 1.5);
-    for (const u of state.units) u.hp = Math.min(u.maxHp, u.hp + shield);
-    if (hero) hero.hp = Math.min(hero.maxHp, hero.hp + shield);
-    log.push({ msg: `✨ 神圣护盾！所有友军获得 ${shield} 护盾`, cls: 'log-heal' });
-  }
-
-  return log;
 }
 
 function nextWave() {
-  // Process frozen enemies - they thaw but already skipped attack
-  for (const m of state.monsters) delete m.frozen;
-
-  // Tavern heal
-  if (state.buildings.tavern) {
-    for (const u of state.units) {
-      u.hp = Math.min(u.maxHp, u.hp + Math.floor(u.maxHp * 0.25));
-    }
-  }
-
-  // Cooldown
-  if (!state.heroAbilityReady) {
-    state.heroAbilityTurns--;
-    if (state.heroAbilityTurns <= 0) {
-      state.heroAbilityReady = true;
-    }
-  }
-
-  state.wave++;
-  if (state.wave > state.maxWaves) {
-    // Night survived
-    state.day++;
-    if (state.day > 15) {
-      state.phase = 'gameOver';
-      renderGameOver(true);
-      return;
-    }
+  if(S.hero.cdLeft>0) { S.hero.cdLeft--; }
+  S.wave++;
+  if(S.wave > S.maxWaves) {
+    S.day++;
+    if(S.day > S.winDays) { endGame(true); return; }
     startDay();
     return;
   }
   spawnWave();
-  renderNight();
+  for(let m of S.monsters) { m.x=cw*0.7+Math.random()*cw*0.2; m.y=ch*0.2+Math.random()*ch*0.5; }
+  S.particles = [];
+  S.battleLog = [];
+  updateUI();
 }
 
-function renderNight() {
-  const battleHtml = renderBattleView();
-  const isBoss = state.wave % 5 === 0;
-
-  $game.innerHTML = `
-    <div id="header">
-      <h1>🏰 超级幻想王国</h1>
-      <div id="day-info">🌙 第 <span>${state.day}</span> 天 · 夜晚阶段 · 波次 ${state.wave}/${state.maxWaves} ${isBoss?'👑BOSS':''}</div>
-    </div>
-    ${renderResBar()}
-    <div id="phase-banner" class="phase-night">🌙 夜 晚 — 怪物正在进攻！守护你的王国！🌙</div>
-    <div id="main">
-      ${battleHtml}
-    </div>
-  `;
+function endGame(won) {
+  S.phase = 'gameOver';
+  updateUI();
 }
 
-function renderBattleView() {
-  const allies = state.units.filter(u => u.hp > 0);
-  const deadAllies = state.units.filter(u => u.hp <= 0);
-  const aliveMonsters = state.monsters.filter(m => m.hp > 0);
-  const deadMonsters = state.monsters.filter(m => m.hp <= 0);
-  const hero = state.hero;
-
-  const renderUnit = (u, side) => {
-    const hpPct = (u.hp / u.maxHp) * 100;
-    const hpClass = hpPct > 60 ? 'hp-high' : hpPct > 30 ? 'hp-mid' : 'hp-low';
-    return `<div class="battle-unit">
-      <span>${u.icon||''}</span>
-      <span style="min-width:3em;">${u.name||''}</span>
-      <div class="hp-bar"><div class="hp-fill ${hpClass}" style="width:${hpPct}%"></div></div>
-      <span style="font-size:0.75em;min-width:3.5em;">${u.hp}/${u.maxHp}</span>
-    </div>`;
-  };
-
-  return `
-    ${hero ? `<div class="hero-info" style="margin-bottom:8px;">
-      🦸 ${hero.icon} <b>${hero.name}</b> | HP:${hero.hp}/${hero.maxHp} | ATK:${hero.atk} | DEF:${hero.def}
-      | 🎯 ${hero.ability} <span style="color:${state.heroAbilityReady?'#4ade80':'#ef4444'}">${state.heroAbilityReady?'[就绪]':`[CD:${state.heroAbilityTurns}]`}</span>
-    </div>` : ''}
-    ${state.heroAbilityReady ? `
-    <div id="hero-ability">
-      <button onclick="useHeroAbility()">🎯 释放技能: ${hero.ability}!</button>
-    </div>` : ''}
-    <div id="battle-arena">
-      <div>
-        <div class="battle-side-label label-def">🛡️ 守军 (${allies.length})</div>
-        ${allies.map(u => renderUnit(u)).join('')}
-        ${deadAllies.length > 0 ? `<div style="color:#666;font-size:0.75em;margin-top:8px;">阵亡: ${deadAllies.map(u=>u.name).join(', ')}</div>` : ''}
-      </div>
-      <div style="display:flex;align-items:center;font-size:2em;color:#666;">⚡</div>
-      <div>
-        <div class="battle-side-label label-atk">👿 怪物 (${aliveMonsters.length})</div>
-        ${aliveMonsters.map(m => renderUnit(m)).join('')}
-        ${deadMonsters.length > 0 ? `<div style="color:#666;font-size:0.75em;margin-top:8px;">已击杀: ${deadMonsters.map(m=>m.name).join(', ')}</div>` : ''}
-      </div>
-    </div>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="fightWave()">⚔️ 开始本波战斗!</button>
-      ${aliveMonsters.length === 0 && state.wave < state.maxWaves ? `<button class="btn" style="flex:1; background:#60a5fa; color:#1a1a2e;" onclick="nextWave()">➡️ 下一波</button>` : ''}
-      ${aliveMonsters.length === 0 && state.wave >= state.maxWaves ? `<button class="btn" style="flex:1; background:#4ade80; color:#1a1a2e;" onclick="nextWave()">☀️ 天亮！</button>` : ''}
-      ${allies.length === 0 && (!hero || hero.hp <= 0) ? `<button class="btn btn-danger" style="flex:1;" onclick="renderGameOver(false)">💀 王国沦陷</button>` : ''}
-    </div>
-    <div id="battle-log" style="min-height:60px;">点击"开始本波战斗"查看战斗过程...</div>
-  `;
+// ==================== 建造/招募/道具 ====================
+function openBuildMenu(col, row) {
+  if(S.phase!=='day') return;
+  S.buildSlot = {col, row};
+  showMenu('🏗️ 选择建筑', Object.entries(BUILD_DEFS).map(([k,v])=>{
+    const cur = S.buildings.filter(b=>b.type===k).length;
+    const maxed = cur>=v.max;
+    const poor = !canAfford(v.cost);
+    const disabled = maxed||poor;
+    return {
+      title: `${v.icon} ${v.name} (${cur}/${v.max})`,
+      sub: v.desc,
+      price: Object.entries(v.cost).map(([r,amt])=>`${resIcon(r)}${amt}`).join(' '),
+      disabled,
+      action: ()=>{
+        if(disabled) { toast(maxed?'⚠️ 已达上限':'💰 资源不足！'); return; }
+        pay(v.cost);
+        S.buildings.push({type:k, col, row});
+        calcProd();
+        closeMenu();
+        updateUI();
+        toast(`✅ 建造了${v.name}！`);
+      }
+    };
+  }));
 }
 
-function useHeroAbility() {
-  const logs = heroAbility();
-  const logEl = document.getElementById('battle-log');
-  if (logEl) {
-    logEl.innerHTML = logs.map(l => `<span class="${l.cls}">${l.msg}</span>`).join('<br>');
+function openRecruitMenu() {
+  if(S.phase!=='day') return;
+  showMenu('👥 招募单位', Object.entries(UNIT_DEFS).map(([k,v])=>{
+    const poor = !canAfford(v.cost);
+    return {
+      title: `${v.icon} ${v.name}`,
+      sub: `HP:${v.hp} ATK:${v.atk} DEF:${v.def} | ${v.desc}`,
+      price: Object.entries(v.cost).map(([r,amt])=>`${resIcon(r)}${amt}`).join(' '),
+      disabled: poor,
+      action: ()=>{
+        if(poor) { toast('💰 资源不足！'); return; }
+        pay(v.cost);
+        S.units.push({
+          id:++S.unitId, type:k, name:v.name, icon:v.icon, color:v.color,
+          hp:v.hp, maxHp:v.hp, atk:v.atk, baseAtk:v.atk, def:v.def, baseDef:v.def,
+          role:v.role, heal:v.heal||0, alive:true,
+          x:ox+(MAP_W/2+Math.random()*2-1)*TILE*scale,
+          y:oy+(MAP_H-1+Math.random())*TILE*scale,
+        });
+        closeMenu();
+        updateUI();
+        toast(`✅ 招募了${v.name}！`);
+      }
+    };
+  }));
+}
+
+function openItemMenu() {
+  if(S.phase!=='day') return;
+  showMenu('⭐ 荣耀商店', Object.entries(ITEM_DEFS).map(([k,v])=>{
+    const bought = S.items.includes(k);
+    const poor = !canAfford(v.cost);
+    return {
+      title: `${v.icon} ${v.name} ${bought?'✅':''}`,
+      sub: v.desc,
+      price: Object.entries(v.cost).map(([r,amt])=>`${resIcon(r)}${amt}`).join(' '),
+      disabled: bought||poor,
+      action: ()=>{
+        if(bought) { toast('⚠️ 已购买'); return; }
+        if(poor) { toast('⭐ 荣耀不足！'); return; }
+        pay(v.cost);
+        S.items.push(k);
+        v.apply(S);
+        closeMenu();
+        updateUI();
+        toast(`✅ 获得${v.name}！`);
+      }
+    };
+  }));
+}
+
+// ==================== UI ====================
+function updateUI() {
+  // resource bar
+  document.getElementById('res-bar').innerHTML = ['wood','stone','food','gold','glory'].map(r=>{
+    const v = S.res[r]||0;
+    const prod = S.dailyProd[r]||0;
+    return `<div class="res"><span class="icon">${resIcon(r)}</span><span class="val">${v}</span>${S.phase==='day'&&prod>0?`<span style="color:#4ade80;font-size:0.7em">+${prod}</span>`:''}</div>`;
+  }).join('');
+
+  // phase info
+  const ph = document.getElementById('phase-info');
+  if(S.phase==='day') ph.innerHTML = `☀️ 第<span>${S.day}</span>天 · 白天`;
+  else if(S.phase==='night') {
+    const isBoss = S.wave%5===0;
+    ph.innerHTML = `🌙 第<span>${S.day}</span>天 · 波次${S.wave}/${S.maxWaves} ${isBoss?'👑BOSS':''}`;
+  } else if(S.phase==='gameOver') ph.innerHTML = S.day>S.winDays?'👑 胜利！':'💀 王国沦陷';
+  else ph.innerHTML = '选择英雄';
+
+  // bottom bar
+  const bb = document.getElementById('bottom-bar');
+  if(S.phase==='day') {
+    bb.innerHTML = `
+      <button class="btn btn-build" onclick="openBuildMenu(5,3)">🏗️ 建造</button>
+      <button class="btn btn-recruit" onclick="openRecruitMenu()">👥 招募</button>
+      <button class="btn btn-item" onclick="openItemMenu()">⭐ 商店</button>
+      <button class="btn btn-end" onclick="startNight()">🌙 进入夜晚</button>
+    `;
+  } else if(S.phase==='night') {
+    const hasEnemy = S.monsters.some(m=>m.alive);
+    const heroReady = S.hero && S.hero.cdLeft <= 0;
+    bb.innerHTML = `
+      ${heroReady ? `<button class="btn btn-hero" onclick="doHeroAbility()">🎯 ${S.hero.ab}!</button>` : ''}
+      ${hasEnemy ? `<button class="btn btn-fight" onclick="fightWave()">⚔️ 战斗!</button>` : ''}
+      ${!hasEnemy && S.wave<S.maxWaves ? `<button class="btn btn-fight" onclick="nextWave()">➡️ 下一波</button>` : ''}
+      ${!hasEnemy && S.wave>=S.maxWaves ? `<button class="btn btn-fight" style="background:#4ade80;color:#1a1a2e" onclick="nextWave()">☀️ 天亮</button>` : ''}
+    `;
+  } else if(S.phase==='gameOver') {
+    bb.innerHTML = `<button class="btn btn-fight" onclick="location.reload()">🔄 再来一局</button>`;
+  } else {
+    bb.innerHTML = '';
   }
-  renderNight();
-  toast('🎯 英雄技能已释放！');
-}
 
-function fightWave() {
-  // Process frozen enemies - unfreeze them for next round
-  const hadFrozen = state.monsters.some(m => m.frozen);
-  for (const m of state.monsters) delete m.frozen;
-
-  const result = resolveBattle();
-  const logEl = document.getElementById('battle-log');
-  if (logEl) {
-    logEl.innerHTML = result.log.map(l => `<span class="${l.cls}">${l.msg}</span>`).join('<br>');
-  }
-  if (hadFrozen) {
-    if (logEl) logEl.innerHTML += '<br><span class="log-heal">❄️ 怪物从冻结中恢复</span>';
-  }
-
-  renderNight();
-
-  if (!result.won) {
-    const alliesLeft = state.units.filter(u => u.hp > 0).length;
-    if (alliesLeft === 0 && (!state.hero || state.hero.hp <= 0)) {
-      setTimeout(() => renderGameOver(false), 500);
-    }
+  // battle log
+  const bl = document.getElementById('battle-log');
+  if(S.phase==='night') {
+    bl.style.display = 'block';
+    bl.innerHTML = S.battleLog.slice(-8).join('<br>');
+  } else {
+    bl.style.display = 'none';
   }
 }
 
-function renderGameOver(won) {
-  state.phase = 'gameOver';
-  const totalGlory = state.resources.glory;
-  const daysSurvived = state.day;
+function addBattleLog(msgs) {
+  S.battleLog.push(...msgs);
+  if(S.battleLog.length > 20) S.battleLog = S.battleLog.slice(-20);
+  const bl = document.getElementById('battle-log');
+  if(bl) bl.innerHTML = S.battleLog.slice(-8).join('<br>');
+}
 
-  $game.innerHTML = `
-    <div id="header">
-      <h1>🏰 超级幻想王国</h1>
-      <div style="color:#aaa">${won ? '🎉 胜利！' : '💀 王国沦陷'}</div>
-    </div>
-    <div id="main" style="justify-content:center; align-items:center;">
-      <div id="game-over">
-        <div style="font-size:4em;">${won ? '👑' : '💀'}</div>
-        <h2>${won ? '王国防守成功！' : '王国沦陷了...'}</h2>
-        <div class="stats">
-          <p>📅 存活天数: <b style="color:var(--gold)">${daysSurvived}</b> / 15</p>
-          <p>⭐ 累计荣耀: <b style="color:var(--glory)">${totalGlory}</b></p>
-          <p>👥 招募单位总数: <b>${state.units.length}</b></p>
-          <p>👑 Boss击杀: <b>${state.bossDefeated}</b></p>
-          <p>🏗️ 建筑总数: <b>${Object.values(state.buildings).reduce((a,b)=>a+b,0)}</b></p>
+function doHeroAbility() {
+  const log = useHeroAbility();
+  addBattleLog(log);
+  updateUI();
+  toast('🎯 英雄技能释放！');
+}
+
+// ==================== 菜单覆盖层 ====================
+function showMenu(title, items) {
+  const overlay = document.getElementById('menu-overlay');
+  const panel = document.getElementById('menu-panel');
+  panel.innerHTML = `
+    <h3>${title}</h3>
+    <div class="menu-grid">
+      ${items.map((it,i)=>`
+        <div class="menu-card ${it.disabled?'disabled':''}" onclick="menuAction(${i})" data-idx="${i}">
+          <div class="title">${it.title}</div>
+          <div class="sub">${it.sub||''}</div>
+          <div class="price">${it.price||''}</div>
         </div>
-        <button class="btn btn-primary" onclick="location.reload()" style="margin-top:16px;">🔄 再来一局</button>
-      </div>
+      `).join('')}
     </div>
+    <button class="menu-close" onclick="closeMenu()">✕ 关闭</button>
   `;
+  panel._items = items;
+  overlay.style.display = 'flex';
 }
 
-// ============ 资源栏 ============
-function resIcon(r) {
-  const map = { wood:'🌲', stone:'🪨', food:'🌾', gold:'💰', glory:'⭐' };
-  return map[r] || r;
+function menuAction(idx) {
+  const panel = document.getElementById('menu-panel');
+  const item = panel._items[idx];
+  if(item && item.action) item.action();
 }
 
-function renderResBar() {
-  const items = ['wood','stone','food','gold','glory'];
-  return `<div id="res-bar">${items.map(r => {
-    const val = state.resources[r] || 0;
-    const delta = state.dailyProd[r] || 0;
-    const dCls = delta > 0 ? 'delta-pos' : delta < 0 ? 'delta-neg' : 'delta-zero';
-    const dStr = state.phase === 'day' ? (delta > 0 ? `+${delta}` : '') : '';
-    return `<div class="res-item">
-      <span class="icon">${resIcon(r)}</span>
-      <span class="val">${val}</span>
-      ${dStr ? `<span class="delta ${dCls}">${dStr}/天</span>` : ''}
-    </div>`;
-  }).join('')}</div>`;
+function closeMenu() {
+  document.getElementById('menu-overlay').style.display = 'none';
+  S.buildSlot = null;
 }
 
-// ============ 启动 ============
-renderPickHero();
+// ==================== 画布点击 ====================
+canvas.addEventListener('click', (e) => {
+  if(S.phase!=='day') return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const col = Math.floor((mx - ox) / (TILE*scale));
+  const row = Math.floor((my - oy) / (TILE*scale));
+  if(col>=0 && col<MAP_W && row>=0 && row<MAP_H) {
+    const hasB = S.buildings.some(b=>b.col===col&&b.row===row);
+    if(!hasB) openBuildMenu(col, row);
+  }
+});
+
+// ==================== 英雄选择 ====================
+function showHeroSelect() {
+  const overlay = document.getElementById('menu-overlay');
+  const panel = document.getElementById('menu-panel');
+  panel.innerHTML = `
+    <h3>⚔️ 选择你的守护者</h3>
+    <p style="text-align:center;color:#aaa;font-size:0.85em;margin-bottom:8px;">白天建造·夜晚守城·存活${S.winDays}天即胜利</p>
+    ${HEROES.map((h,i)=>`
+      <div class="menu-card" style="display:block;margin-bottom:6px;" onclick="selectHero(${i})">
+        <div style="font-size:2em;">${h.icon}</div>
+        <div class="title">${h.name}</div>
+        <div class="sub">🎯 ${h.ab}: ${h.abDesc}</div>
+        <div class="price">冷却: ${h.cd}回合</div>
+      </div>
+    `).join('')}
+  `;
+  overlay.style.display = 'flex';
+}
+
+function selectHero(idx) {
+  const h = HEROES[idx];
+  S.hero = {
+    name:h.name, icon:h.icon, color:h.color,
+    hp:60, maxHp:60, atk:12, baseAtk:12, def:3, baseDef:3,
+    ab:h.ab, abDesc:h.abDesc, cd:h.cd, cdLeft:0,
+    _tx:0, _ty:0,
+  };
+  closeMenu();
+  S.day = 1;
+  S.buildSlot = null;
+  startDay();
+}
+
+// ==================== 画布渲染循环 ====================
+function render() {
+  ctx.clearRect(0, 0, cw, ch);
+  resize();
+  if(S.phase==='day') {
+    drawDay();
+  } else if(S.phase==='night') {
+    drawNight();
+  } else if(S.phase==='gameOver') {
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, cw, ch);
+    const won = S.day > S.winDays;
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${24*scale}px sans-serif`; ctx.textAlign='center';
+    ctx.fillText(won?'👑 王国守卫成功！':'💀 王国沦陷...', cw/2, ch*0.35);
+    ctx.font = `${13*scale}px sans-serif`; ctx.fillStyle = '#aaa';
+    ctx.fillText(`存活 ${S.day} 天 | Boss击杀 ${S.bossKills} | 荣耀 ${S.res.glory}`, cw/2, ch*0.45);
+    ctx.fillText(`招募 ${S.units.length} 单位 | 建筑 ${S.buildings.length} 座`, cw/2, ch*0.5);
+  }
+
+  // particles on top of everything
+  updateParticles();
+  drawParticles();
+  drawDmgNums();
+
+  // remove text particles (dmg numbers)
+  S.particles = S.particles.filter(p => !p.isText || p.life > 0);
+
+  // shake effect
+  if(S.shakeTimer>0) {
+    S.shakeTimer--;
+    const sx = (Math.random()-0.5)*6*scale*(S.shakeTimer/15);
+    const sy = (Math.random()-0.5)*6*scale*(S.shakeTimer/15);
+    // already rendered, just offset via transform on next frame
+  }
+
+  requestAnimationFrame(render);
+}
+
+// ==================== 键盘快捷键 ====================
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') closeMenu();
+  if(e.key==='b' && S.phase==='day') openBuildMenu(5,3);
+  if(e.key==='r' && S.phase==='day') openRecruitMenu();
+  if(e.key==='i' && S.phase==='day') openItemMenu();
+  if(e.key===' ' && S.phase==='night') {
+    e.preventDefault();
+    const hasEnemy = S.monsters.some(m=>m.alive);
+    if(hasEnemy) fightWave();
+    else nextWave();
+  }
+  if(e.key==='q' && S.phase==='night' && S.hero&&S.hero.cdLeft<=0) doHeroAbility();
+});
+
+// ==================== 启动 ====================
+function init() {
+  resize();
+  showHeroSelect();
+  updateUI();
+}
+init();
+render();
 </script>
 </body>
 </html>
